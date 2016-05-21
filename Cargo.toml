@@ -1,0 +1,11 @@
+[package]
+name = "Tina"
+version = "0.1.0"
+authors = ["wafrelka <wafrelka@gmail.com>"]
+
+[dependencies]
+oauthcli = "0.1"
+url = "0.5"
+yaml-rust = "0.3"
+hyper = "0.8"
+openssl = "< 0.7.11, >= 0.7.0"

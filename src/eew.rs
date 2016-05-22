@@ -3,33 +3,33 @@ extern crate chrono;
 use self::chrono::*;
 
 
-enum IssuePattern { IntensityOnly, LowAccuracy, HighAccuracy, Cancel }
-enum Source { Sapporo, Sendai, Tokyo, Osaka, Fukuoka, Okinawa }
-enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Test }
-enum Status { Normal, Correction, CancelCorrection, LastWithCorrection, Last, Unknown }
+pub enum IssuePattern { IntensityOnly, LowAccuracy, HighAccuracy, Cancel }
+pub enum Source { Sapporo, Sendai, Tokyo, Osaka, Fukuoka, Okinawa }
+pub enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Test }
+pub enum Status { Normal, Correction, CancelCorrection, LastWithCorrection, Last, Unknown }
 
-enum EpicenterAccuracy {
+pub enum EpicenterAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
 	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Reserved, Unknown
 }
 
-enum DepthAccuracy {
+pub enum DepthAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
 	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Reserved, Unknown
 }
 
-enum MagnitudeAccuracy {
+pub enum MagnitudeAccuracy {
 	NIED, PWave, PSMixed, SWave, EPOS, Level,
 	Undefined, Reserved, Unknown
 }
 
-enum EpicenterCategory { Land, Sea, Undefined, Unknown }
-enum WarningStatus { Forecast, Alert, Undefined, Unknown }
-enum IntensityChange { Same, Up, Down, Undefined, Unknown }
-enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Undefined, Unknown }
-enum WaveStatus { Unreached, Reached, Undefined, Unknown }
+pub enum EpicenterCategory { Land, Sea, Undefined, Unknown }
+pub enum WarningStatus { Forecast, Alert, Undefined, Unknown }
+pub enum IntensityChange { Same, Up, Down, Undefined, Unknown }
+pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Undefined, Unknown }
+pub enum WaveStatus { Unreached, Reached, Undefined, Unknown }
 
-struct AreaEEW {
+pub struct AreaEEW {
 
 	area_name: String,
 	minimum_intensity: f32,
@@ -39,7 +39,7 @@ struct AreaEEW {
 	wave_status: WaveStatus,
 }
 
-struct EEW {
+pub struct EEW {
 
 	pattern: IssuePattern,
 	source: Source,

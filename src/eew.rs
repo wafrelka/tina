@@ -70,5 +70,5 @@ pub struct EEW {
 }
 
 pub trait ToEEW {
-	fn to_eew(&self, text: &str) -> EEW;
+	fn to_eew(&self, text: &[u8]) -> Option<EEW>;
 }

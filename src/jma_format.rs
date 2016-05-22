@@ -7,8 +7,9 @@ struct JMAFormat {
 
 impl ToEEW for JMAFormat {
 
-	fn to_eew(&self, text: &str) -> EEW
+	fn to_eew(&self, text: &[u8]) -> Option<EEW>
 	{
 		// FIXME: implement
+		return None;
 	}
 }

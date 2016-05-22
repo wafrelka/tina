@@ -1,6 +1,8 @@
 extern crate yaml_rust;
 
 mod twitter_client;
+mod eew;
+
 use twitter_client::TwitterClient as TwitterClient;
 use std::env;
 

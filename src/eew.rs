@@ -46,7 +46,7 @@ struct EEW {
 	kind: Kind,
 	issued_at: DateTime<UTC>,
 
-	quake_at: DateTime<UTC> ,
+	occurred_at: DateTime<UTC>,
 	id: String,
 	status: Status,
 	number: Option<u32>,

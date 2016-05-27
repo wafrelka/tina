@@ -1,10 +1,8 @@
 extern crate yaml_rust;
+extern crate tina;
 
-mod twitter_client;
-mod eew;
-
-use twitter_client::TwitterClient as TwitterClient;
 use std::env;
+use tina::*;
 
 fn main()
 {

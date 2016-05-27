@@ -68,7 +68,3 @@ pub struct EEW {
 
 	area_eew: Vec<AreaEEW>,
 }
-
-pub trait ToEEW {
-	fn to_eew(&self, text: &[u8]) -> Option<EEW>;
-}

@@ -1,5 +1,5 @@
 mod eew;
-mod jma_format;
+mod parser;
 mod twitter_client;
 
 pub use self::eew::*;

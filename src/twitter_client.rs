@@ -10,6 +10,7 @@ use self::hyper::method::Method;
 use self::hyper::status::StatusCode;
 use self::hyper::header::{Headers, Authorization, ContentType};
 
+
 pub struct TwitterClient {
 	consumer_key: String,
 	consumer_secret: String,

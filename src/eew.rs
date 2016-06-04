@@ -1,6 +1,5 @@
 extern crate chrono;
 
-use std::cmp::{PartialEq, Eq};
 use self::chrono::*;
 
 

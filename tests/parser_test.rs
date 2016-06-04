@@ -48,7 +48,6 @@ fn it_should_parse_normal_eew_01()
 	let area = HashMap::new();
 	epicenter.insert(b"287".to_owned(), "宮城県沖".to_owned());
 
-	// XXX: currently we don't care about epicenter_name
 	let expected = EEW {
 		source: Source::Tokyo,
 		kind: Kind::Normal,
@@ -93,7 +92,6 @@ fn it_should_parse_normal_eew_02()
 	let area = HashMap::new();
 	epicenter.insert(b"540".to_owned(), "奈良県".to_owned());
 
-	// XXX: currently we don't care about epicenter_name
 	let expected = EEW {
 		source: Source::Tokyo,
 		kind: Kind::Normal,

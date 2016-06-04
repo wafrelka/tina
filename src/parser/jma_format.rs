@@ -37,11 +37,11 @@ pub enum JMAFormatParseError {
 
 fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<UTC>>
 {
-	let JST: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
-	let DATETIME_FORMAT: &'static str = "%y%m%d%H%M%S";
+	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
+	const DATETIME_FORMAT: &'static str = "%y%m%d%H%M%S";
 
 	return str::from_utf8(&datetime_text).ok().and_then( |converted|
-		JST.datetime_from_str(&converted, DATETIME_FORMAT).ok().map( |dt|
+		jst.datetime_from_str(&converted, DATETIME_FORMAT).ok().map( |dt|
 			dt.with_timezone(&UTC)
 		)
 	);
@@ -49,9 +49,9 @@ fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<UTC>>
 
 fn parse_number(number_text: &[u8]) -> Option<u32>
 {
-	return str::from_utf8(&number_text).ok().and_then( |converted|
+	str::from_utf8(&number_text).ok().and_then( |converted|
 		converted.parse().ok()
-	);
+	)
 }
 
 fn parse_intensity(intensity_text: &[u8]) -> Option<f32>
@@ -72,11 +72,11 @@ fn parse_intensity(intensity_text: &[u8]) -> Option<f32>
 
 fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateTime<UTC>>
 {
-	let JST: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
-	let TIME_FORMAT: &'static str = "%H%M%S";
+	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
+	const TIME_FORMAT: &'static str = "%H%M%S";
 
 	let adjust = |a_t: NaiveTime| {
-		let base_t = base.with_timezone(&JST).time();
+		let base_t = base.with_timezone(&jst).time();
 		let diff = a_t - base_t;
 		if diff < Duration::seconds(0) {
 			return base.checked_add(Duration::days(1) - diff);

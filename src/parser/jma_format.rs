@@ -79,7 +79,7 @@ fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateT
 		let base_t = base.with_timezone(&jst).time();
 		let diff = a_t - base_t;
 		if diff < Duration::seconds(0) {
-			return base.checked_add(Duration::days(1) - diff);
+			return base.checked_add(Duration::days(1) + diff);
 		} else {
 			return base.checked_add(diff);
 		}

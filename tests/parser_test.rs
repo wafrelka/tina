@@ -133,7 +133,7 @@ fn it_should_parse_ebi_part()
 		EBI 521 S5+5+ ////// 11 540 S5+5- ////// 11 511 S5+5- ////// 11 \
 		550 S5-5- ////// 11 551 S5-04 ////// 11 535 S5-04 ////// 11 \
 		391 S0404 ////// 11 620 S0404 ////// 11 563 S0404 165703 10 \
-		592 S0404 165703 10 591 S0403 ////// 11 301 S5-// ////// 01 \
+		592 S0404 165703 10 591 S0403 ////// 11 301 S5-// 010101 01 \
 		9999=";
 
 	let mut epicenter = HashMap::new();
@@ -177,7 +177,7 @@ fn it_should_parse_ebi_part()
 		make_areaeew("鳥取県西部", 4.0, Some(4.0), Some(date.and_hms(7, 57, 3)), true, false),
 		make_areaeew("広島県南西部", 4.0, Some(4.0), Some(date.and_hms(7, 57, 3)), true, false),
 		make_areaeew("広島県南東部", 3.0, Some(4.0), None, true, true),
-		make_areaeew("茨城県南部", 4.75, None, None, false, true)
+		make_areaeew("茨城県南部", 4.75, None, Some(date.and_hms(16, 1, 1)), false, true)
 	};
 
 	let full_result = parse_jma_format(telegram, &epicenter, &area);

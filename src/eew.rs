@@ -100,5 +100,5 @@ pub struct FullEEW {
 	pub intensity_change: IntensityChange,
 	pub change_reason: ChangeReason,
 
-	pub area_eew: Vec<AreaEEW>,
+	pub area_info: Vec<AreaEEW>,
 }

@@ -1,6 +1,7 @@
 extern crate chrono;
 
 use std::str;
+use std::collections::HashMap;
 use self::chrono::*;
 use eew::*;
 
@@ -30,6 +31,8 @@ pub enum JMAFormatParseError {
 	InvalidIntensityChange,
 	InvalidChangeReason,
 	InvalidWaveStatus,
+	InvalidEBI,
+	PrematureEOS,
 }
 
 fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<UTC>>
@@ -51,16 +54,6 @@ fn parse_number(number_text: &[u8]) -> Option<u32>
 	);
 }
 
-fn parse_epicenter_code(code: &[u8]) -> Option<String>
-{
-	return str::from_utf8(&code).map( |s| s.to_string()).ok();
-}
-
-fn parse_area_code(code: &[u8]) -> Option<String>
-{
-	return str::from_utf8(&code).map( |s| s.to_string()).ok();
-}
-
 fn parse_intensity(intensity_text: &[u8]) -> Option<f32>
 {
 	match intensity_text {
@@ -77,7 +70,31 @@ fn parse_intensity(intensity_text: &[u8]) -> Option<f32>
 	}
 }
 
-pub fn parse_jma_format(text: &[u8]) -> Result<EEW, JMAFormatParseError>
+fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateTime<UTC>>
+{
+	let JST: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
+	let TIME_FORMAT: &'static str = "%H%M%S";
+
+	let adjust = |a_t: NaiveTime| {
+		let base_t = base.with_timezone(&JST).time();
+		let diff = a_t - base_t;
+		if diff < Duration::seconds(0) {
+			return base.checked_add(Duration::days(1) - diff);
+		} else {
+			return base.checked_add(diff);
+		}
+	};
+
+	return str::from_utf8(&arrival_text).ok().and_then( |converted|
+		NaiveTime::parse_from_str(&converted, TIME_FORMAT).ok().and_then( |t|
+			adjust(t)
+		)
+	);
+}
+
+pub fn parse_jma_format(text: &[u8],
+	epicenter_code_dict: &HashMap<[u8; 3], String>,
+	area_code_dict: &HashMap<[u8; 3], String>) -> Result<EEW, JMAFormatParseError>
 {
 	if text.len() < 140 {
 		return Err(JMAFormatParseError::TooShort);
@@ -156,8 +173,8 @@ pub fn parse_jma_format(text: &[u8]) -> Result<EEW, JMAFormatParseError>
 		_ => return Err(JMAFormatParseError::InvalidPattern)
 	};
 
-	let epicenter_name = match parse_epicenter_code(&text[86..89]) {
-		Some(e) => e,
+	let epicenter_name = match epicenter_code_dict.get(&text[86..89]) {
+		Some(s) => s.clone(),
 		None => return Err(JMAFormatParseError::UnknownEpicenter)
 	};
 
@@ -276,14 +293,85 @@ pub fn parse_jma_format(text: &[u8]) -> Result<EEW, JMAFormatParseError>
 		_ => return Err(JMAFormatParseError::InvalidChangeReason)
 	};
 
-	// TODO: parse EBI part
+	let mut area_info = vec! {};
 
-	let area_eew = vec! {};
+	if &text[135..138] == b"EBI" {
+
+		let ebi_part_len = 20;
+		let mut it = 138;
+
+		while it + ebi_part_len < text.len() {
+
+			let part = &text[it..(it+ebi_part_len)];
+
+			let area_name = match area_code_dict.get(&part[1..4]) {
+				Some(s) => s.clone(),
+				None => return Err(JMAFormatParseError::InvalidEBI)
+			};
+
+			let left_intensity = match parse_intensity(&part[6..8]) {
+				Some(v) => v,
+				None => return Err(JMAFormatParseError::InvalidEBI)
+			};
+
+			let right_intensity = match parse_intensity(&part[8..10]) {
+				Some(v) => Some(v),
+				None => match &part[8..10] {
+					b"//" => None,
+					_ => return Err(JMAFormatParseError::InvalidEBI)
+				}
+			};
+
+			let (minimum_intensity, maximum_intensity) = match right_intensity {
+				Some(v) => (v, Some(left_intensity)),
+				None => (left_intensity, None)
+			};
+
+			let reached_at = match parse_arrival_time(&part[11..17], &occurred_at) {
+				Some(v) => Some(v),
+				None => match &part[11..17] {
+					b"//////" => None,
+					_ => return Err(JMAFormatParseError::InvalidEBI)
+				}
+			};
+
+			let local_warning_status = match part[18] {
+				b'0' => WarningStatus::Forecast,
+				b'1' => WarningStatus::Alert,
+				b'/' => WarningStatus::Unknown,
+				_ => return Err(JMAFormatParseError::InvalidEBI)
+			};
+
+			let wave_status = match part[19] {
+				b'0' => WaveStatus::Unreached,
+				b'1' => WaveStatus::Reached,
+				b'/' => WaveStatus::Unknown,
+				_ => return Err(JMAFormatParseError::InvalidEBI)
+			};
+
+			let area_eew = AreaEEW {
+				area_name: area_name,
+				minimum_intensity: minimum_intensity,
+				maximum_intensity: maximum_intensity,
+				reached_at: reached_at,
+				warning_status: local_warning_status,
+				wave_status: wave_status,
+			};
+
+			area_info.push(area_eew);
+
+			it += ebi_part_len;
+		}
+
+		if it + 5 >= text.len() || &text[(it+1)..(it+6)] != b"9999=" {
+			return Err(JMAFormatParseError::PrematureEOS);
+		}
+	}
 
 	let detail = FullEEW {
 
 		issue_pattern: issue_pattern,
-		epicenter_name: epicenter_name.to_string(),
+		epicenter_name: epicenter_name,
 		epicenter: (lat, lon),
 		depth: depth,
 		magnitude: magnitude,
@@ -296,7 +384,7 @@ pub fn parse_jma_format(text: &[u8]) -> Result<EEW, JMAFormatParseError>
 		intensity_change: intensity_change,
 		change_reason: change_reason,
 
-		area_eew: area_eew
+		area_info: area_info
 	};
 
 	return Ok(EEW{

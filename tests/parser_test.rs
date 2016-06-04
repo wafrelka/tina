@@ -1,4 +1,4 @@
-#[cfg(test)]
+#![cfg(test)]
 
 extern crate chrono;
 extern crate tina;

@@ -1,70 +1,104 @@
 extern crate chrono;
 
+use std::cmp::{PartialEq, Eq};
 use self::chrono::*;
 
 
-pub enum IssuePattern { IntensityOnly, LowAccuracy, HighAccuracy, Cancel }
-pub enum Source { Sapporo, Sendai, Tokyo, Osaka, Fukuoka, Okinawa }
+#[derive(PartialEq, Eq, Debug)]
+pub enum IssuePattern { IntensityOnly, LowAccuracy, HighAccuracy }
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum Source { Tokyo, Osaka }
+
+#[derive(PartialEq, Eq, Debug)]
 pub enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Test }
+
+#[derive(PartialEq, Eq, Debug)]
 pub enum Status { Normal, Correction, CancelCorrection, LastWithCorrection, Last, Unknown }
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum EpicenterAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
-	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Reserved, Unknown
+	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Unknown
 }
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum DepthAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
-	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Reserved, Unknown
+	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Unknown
 }
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum MagnitudeAccuracy {
-	NIED, PWave, PSMixed, SWave, EPOS, Level,
-	Undefined, Reserved, Unknown
+	NIED, PWave, PSMixed, SWave, EPOS, Level, Unknown
 }
 
-pub enum EpicenterCategory { Land, Sea, Undefined, Unknown }
-pub enum WarningStatus { Forecast, Alert, Undefined, Unknown }
-pub enum IntensityChange { Same, Up, Down, Undefined, Unknown }
-pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Undefined, Unknown }
-pub enum WaveStatus { Unreached, Reached, Undefined, Unknown }
+#[derive(PartialEq, Eq, Debug)]
+pub enum EpicenterCategory { Land, Sea, Unknown }
 
+#[derive(PartialEq, Eq, Debug)]
+pub enum WarningStatus { Forecast, Alert, Unknown }
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum IntensityChange { Same, Up, Down, Unknown }
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Unknown }
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum WaveStatus { Unreached, Reached, Unknown }
+
+#[derive(PartialEq, Debug)]
+pub enum EEWDetail {
+	Full(FullEEW),
+	Cancel,
+}
+
+#[derive(PartialEq, Debug)]
 pub struct AreaEEW {
 
-	area_name: String,
-	minimum_intensity: f32,
-	maximum_intensity: Option<f32>,
-	reached_at: DateTime<UTC>,
-	warning_status: WarningStatus,
-	wave_status: WaveStatus,
+	pub area_name: String,
+	pub minimum_intensity: f32,
+	pub maximum_intensity: Option<f32>,
+	pub reached_at: Option<DateTime<UTC>>,
+	pub warning_status: WarningStatus,
+	pub wave_status: WaveStatus,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct EEW {
 
-	pattern: IssuePattern,
-	source: Source,
-	kind: Kind,
-	issued_at: DateTime<UTC>,
+	pub source: Source,
+	pub kind: Kind,
+	pub issued_at: DateTime<UTC>,
 
-	occurred_at: DateTime<UTC>,
-	id: String,
-	status: Status,
-	number: Option<u32>,
-	epicenter_name: String,
+	pub occurred_at: DateTime<UTC>,
+	pub id: String,
+	pub status: Status,
+	pub number: u32, // we don't accept an EEW which has no telegram number
 
-	epicenter: (f32, f32),
-	depth: f32,
-	magnitude: f32,
-	maximum_intensity: f32,
+	pub detail: EEWDetail,
+}
 
-	epicenter_accuracy: EpicenterAccuracy,
-	depth_accuracy: DepthAccuracy,
-	magnitude_accuracy: MagnitudeAccuracy,
+#[derive(PartialEq, Debug)]
+pub struct FullEEW {
 
-	epicenter_caterogy: EpicenterCategory,
-	warning_status: WarningStatus,
-	intensity_change: IntensityChange,
-	change_reason: ChangeReason,
+	pub issue_pattern: IssuePattern,
 
-	area_eew: Vec<AreaEEW>,
+	pub epicenter_name: String,
+	pub epicenter: (f32, f32),
+	pub depth: Option<f32>,
+	pub magnitude: Option<f32>,
+	pub maximum_intensity: Option<f32>,
+
+	pub epicenter_accuracy: EpicenterAccuracy,
+	pub depth_accuracy: DepthAccuracy,
+	pub magnitude_accuracy: MagnitudeAccuracy,
+
+	pub epicenter_caterogy: EpicenterCategory,
+	pub warning_status: WarningStatus,
+	pub intensity_change: IntensityChange,
+	pub change_reason: ChangeReason,
+
+	pub area_eew: Vec<AreaEEW>,
 }

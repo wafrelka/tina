@@ -3,6 +3,7 @@ extern crate hyper;
 extern crate crypto;
 
 use std::io::{Read};
+use std::time::Duration;
 use self::hyper::Client;
 use self::hyper::client::Response;
 use self::hyper::header::Headers;
@@ -15,6 +16,7 @@ header! { (XWNIPassword, "X-WNI-Password") => [String] }
 
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 const LOGIN_PATH: &'static str = "/login";
+const TIMEOUT_SECS: u64 = 3 * 60;
 
 #[derive(Debug)]
 pub enum WNIError {
@@ -32,10 +34,13 @@ impl WNIClient {
 
 	pub fn new(wni_id: String, wni_password: String) -> WNIClient
 	{
+		let mut client = Client::new();
+		client.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)));
+
 		WNIClient {
 			wni_id: wni_id,
 			wni_password: wni_password,
-			client: Client::new()
+			client: client
 		}
 	}
 

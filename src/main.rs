@@ -2,8 +2,6 @@ extern crate yaml_rust;
 extern crate tina;
 
 use std::env;
-use std::str;
-use std::io::{BufRead, BufReader};
 use tina::*;
 
 fn main()
@@ -20,41 +18,24 @@ fn main()
 
 	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
 
-	let res = match wni_client.connect() {
-		Ok(v) => v,
-		Err(e) => {
-			println!("{:?}", e);
-			return;
-		}
-	};
-
-	let h = format!("{:?}", (&res.headers).clone());
-	let mut body = BufReader::new(res);
-
-	println!("[Header] {}", h);
-
 	loop {
 
-		let mut buf = Vec::new();
-
-
-		match body.read_until(b'\n', &mut buf) {
-
+		let mut connection = match wni_client.connect() {
+			Ok(v) => v,
 			Err(e) => {
-				println!("[Error] {:?}", e);
+				println!("ConnectionError: {:?}", e);
 				return;
 			}
-			Ok(size) => {
-				if size == 0 {
-					println!("[Connection] connection closed.");
-					return;
-				} else {
-					match str::from_utf8(&buf) {
-						Ok(r) => print!("[Body] {}", r),
-						Err(_) => println!("[Body(Raw)] {:?}", buf)
-					};
-				}
-			}
 		};
+
+		let eew = match connection.wait_for_telegram() {
+			Err(e) => {
+				println!("StreamingError: {:?}", e);
+				continue;
+			},
+			Ok(eew) => eew
+		};
+
+		println!("EEW: {:?}", eew);
 	}
 }

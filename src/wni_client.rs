@@ -2,17 +2,21 @@ extern crate url;
 extern crate hyper;
 extern crate crypto;
 
-use std::io::{Read};
+use std::io::{Read, BufRead, BufReader};
 use std::time::Duration;
+use std::collections::HashMap;
 use self::hyper::Client;
 use self::hyper::client::Response;
 use self::hyper::header::Headers;
 use self::crypto::digest::Digest;
 use self::crypto::md5::Md5;
+use eew::EEW;
+use parser::parse_jma_format;
 
 
 header! { (XWNIAccount, "X-WNI-Account") => [String] }
 header! { (XWNIPassword, "X-WNI-Password") => [String] }
+header! { (XWNIResult, "X-WNI-Result") => [String] }
 
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 const LOGIN_PATH: &'static str = "/login";
@@ -21,7 +25,9 @@ const TIMEOUT_SECS: u64 = 3 * 60;
 #[derive(Debug)]
 pub enum WNIError {
 	Authentication,
-	Network
+	Network,
+	ConnectionClosed,
+	InvalidData,
 }
 
 pub struct WNIClient {
@@ -53,7 +59,7 @@ impl WNIClient {
 		return body.split('\n').next().ok_or(WNIError::Network).map(|s| s.to_string());
 	}
 
-	pub fn connect(&self) -> Result<Response, WNIError>
+	pub fn connect(&self) -> Result<WNIConnection, WNIError>
 	{
 		let server = try!(self.retrieve_server());
 		let url = format!("http://{}{}", server, LOGIN_PATH);
@@ -68,6 +74,61 @@ impl WNIClient {
 
 		let res = try!(self.client.get(&url).headers(headers).send().map_err(|_| WNIError::Network));
 
-		return Ok(res);
+		if res.headers.get::<XWNIResult>() != Some(&XWNIResult("OK".to_owned())) {
+			return Err(WNIError::Authentication);
+		}
+
+		return Ok(WNIConnection::new(res));
+	}
+}
+
+pub struct WNIConnection {
+	reader: BufReader<Response>
+}
+
+impl WNIConnection {
+
+	pub fn new(response: Response) -> WNIConnection
+	{
+		let reader = BufReader::new(response);
+		WNIConnection { reader: reader }
+	}
+
+	pub fn wait_for_telegram(&mut self) -> Result<EEW, WNIError>
+	{
+		let mut buffer = vec! {};
+
+		match self.reader.read_until(b'\x03', &mut buffer) {
+
+			Err(_) => {
+				return Err(WNIError::Network);
+			}
+
+			Ok(size) => {
+
+				if size == 0 {
+					return Err(WNIError::ConnectionClosed);
+				}
+
+				println!("Received: {}", String::from_utf8_lossy(&buffer));
+
+				let left = try!(buffer.iter().rposition(|&x| x == b'\x02')
+					.ok_or(WNIError::InvalidData)) + 2;
+				let right = buffer.len() - 2;
+
+				if left >= right {
+					return Err(WNIError::InvalidData);
+				}
+
+				let d1 = HashMap::new();
+				let d2 = HashMap::new();
+
+				let raw_data = &buffer[left..right];
+				let eew = try!(parse_jma_format(raw_data, &d1, &d2)
+					.map_err(|_| WNIError::InvalidData));
+
+				return Ok(eew);
+			}
+		};
 	}
 }

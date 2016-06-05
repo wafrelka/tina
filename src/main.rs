@@ -8,25 +8,34 @@ fn main()
 {
 	let args: Vec<String> = env::args().collect();
 
-	if args.len() < 2 {
+	if args.len() < 3 {
+		println!("usage: {} <wni_id> <wni_password>", args[0]);
 		return;
 	}
 
-	let tweet = args[1].clone();
+	let wni_id = args[1].clone();
+	let wni_password = args[2].clone();
 
-	let consumer_key = "xxxxxxxxxx".to_string();
-	let consumer_secret = "0000000000".to_string();
-	let access_key = "1111111111-yyyyyyyyyyyyyyyyyyyy".to_string();
-	let access_secret = "zzzzzzzzzzzzzzzzzzzz".to_string();
+	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
 
-	let tc = TwitterClient::new(consumer_key, consumer_secret, access_key, access_secret);
+	loop {
 
-	if ! tc.is_valid() {
-		println!("Invalid token.");
-		return;
+		let mut connection = match wni_client.connect() {
+			Ok(v) => v,
+			Err(e) => {
+				println!("ConnectionError: {:?}", e);
+				return;
+			}
+		};
+
+		let eew = match connection.wait_for_telegram() {
+			Err(e) => {
+				println!("StreamingError: {:?}", e);
+				continue;
+			},
+			Ok(eew) => eew
+		};
+
+		println!("EEW: {:?}", eew);
 	}
-
-	let res = tc.update_status(tweet);
-
-	println!("{:?}", res);
 }

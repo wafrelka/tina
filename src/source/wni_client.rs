@@ -94,7 +94,9 @@ impl WNIConnection {
 		WNIConnection { reader: reader }
 	}
 
-	pub fn wait_for_telegram(&mut self) -> Result<EEW, WNIError>
+	pub fn wait_for_telegram(&mut self,
+		epicenter_dict: &HashMap<[u8; 3], String>,
+		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WNIError>
 	{
 		let mut buffer = vec! {};
 
@@ -120,11 +122,8 @@ impl WNIConnection {
 					return Err(WNIError::InvalidData);
 				}
 
-				let d1 = HashMap::new();
-				let d2 = HashMap::new();
-
 				let raw_data = &buffer[left..right];
-				let eew = try!(parse_jma_format(raw_data, &d1, &d2)
+				let eew = try!(parse_jma_format(raw_data, epicenter_dict, area_dict)
 					.map_err(|_| WNIError::InvalidData));
 
 				return Ok(eew);

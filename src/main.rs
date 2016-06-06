@@ -108,14 +108,17 @@ fn main()
 			}
 		};
 
-		let eew = match connection.wait_for_telegram(&epicenter_dict, &area_dict) {
-			Err(e) => {
-				println!("StreamingError: {:?}", e);
-				continue;
-			},
-			Ok(eew) => eew
-		};
+		loop {
 
-		print_eew(&eew);
+			let eew = match connection.wait_for_telegram(&epicenter_dict, &area_dict) {
+				Err(e) => {
+					println!("StreamingError: {:?}", e);
+					break;
+				},
+				Ok(eew) => eew
+			};
+
+			print_eew(&eew);
+		}
 	}
 }

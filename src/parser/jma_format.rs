@@ -122,7 +122,7 @@ pub fn parse_jma_format(text: &[u8],
 	};
 
 	// TODO: accept split telegrams
-	if &text[23..25] != b"11" {
+	if text[24] != b'1' {
 		return Err(JMAFormatParseError::Split);
 	}
 
@@ -301,6 +301,10 @@ pub fn parse_jma_format(text: &[u8],
 		let mut it = 138;
 
 		while it + ebi_part_len < text.len() {
+
+			if &text[(it+1)..(it+6)] == b"9999=" {
+				break;
+			}
 
 			let part = &text[it..(it+ebi_part_len)];
 

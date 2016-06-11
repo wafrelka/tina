@@ -3,7 +3,7 @@ use std::io::Read;
 use oauthcli::SignatureMethod::HmacSha1;
 use oauthcli::{timestamp, nonce, authorization_header};
 use url::Url;
-use url::form_urlencoded::serialize;
+use url::form_urlencoded::Serializer;
 use hyper::{Client, Error};
 use hyper::client::Response;
 use hyper::method::Method;
@@ -110,20 +110,18 @@ impl TwitterClient {
 
 				let content_type = ContentType("application/x-www-form-urlencoded".parse().unwrap());
 
-				let args_serialized = &serialize(&args);
-
-				/* let mut args_serializer = Serializer::new(String::new());
+				let mut args_serializer = Serializer::new(String::new());
 				for &(ref k, ref v) in &args {
 					args_serializer.append_pair(k, v);
 				}
-				let args_serialized = args_serializer.finish();*/
+				let args_serialized = args_serializer.finish();
 
 				let mut headers = Headers::new();
 				let oauth_header = self.construct_oauth_header("POST", api_url, args);
 				headers.set(Authorization(oauth_header));
 				headers.set(content_type);
 
-				let result = self.client.post(api_url).body(args_serialized).headers(headers).send();
+				let result = self.client.post(api_url).body(&args_serialized).headers(headers).send();
 
 				return result;
 

@@ -5,7 +5,7 @@ authors = ["wafrelka <wafrelka@gmail.com>"]
 
 [dependencies]
 oauthcli = "0.1"
-url = "0.5"
+url = "1.1"
 yaml-rust = "0.3"
 hyper = "0.8"
 chrono = "0.2"

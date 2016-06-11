@@ -8,6 +8,7 @@ mod eew;
 mod parser;
 mod destination;
 mod source;
+mod emitter;
 
 pub use self::eew::*;
 pub use self::parser::*;

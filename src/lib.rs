@@ -1,5 +1,8 @@
-#[macro_use]
-extern crate hyper; // XXX: how to move this statement into wni_client.rs ?
+extern crate oauthcli;
+extern crate url;
+#[macro_use] extern crate hyper;
+extern crate chrono;
+extern crate crypto;
 
 mod eew;
 mod parser;

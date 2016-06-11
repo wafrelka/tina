@@ -1,6 +1,4 @@
-extern crate chrono;
-
-use self::chrono::*;
+use chrono::*;
 
 
 #[derive(PartialEq, Eq, Debug)]

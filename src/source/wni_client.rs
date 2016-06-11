@@ -1,15 +1,13 @@
-extern crate url;
-extern crate hyper;
-extern crate crypto;
-
 use std::io::{Read, BufRead, BufReader};
 use std::time::Duration;
 use std::collections::HashMap;
-use self::hyper::Client;
-use self::hyper::client::Response;
-use self::hyper::header::Headers;
-use self::crypto::digest::Digest;
-use self::crypto::md5::Md5;
+
+use hyper::Client;
+use hyper::client::Response;
+use hyper::header::Headers;
+use crypto::digest::Digest;
+use crypto::md5::Md5;
+
 use eew::EEW;
 use parser::parse_jma_format;
 

@@ -1,8 +1,8 @@
-extern crate chrono;
-
 use std::str;
 use std::collections::HashMap;
-use self::chrono::*;
+
+use chrono::*;
+
 use eew::*;
 
 

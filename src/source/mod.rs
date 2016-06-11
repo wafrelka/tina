@@ -1,3 +1,3 @@
-pub mod wni_client;
+mod wni_client;
 
 pub use self::wni_client::WNIClient;

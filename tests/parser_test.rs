@@ -4,8 +4,9 @@ extern crate chrono;
 extern crate tina;
 
 use std::collections::HashMap;
-use self::chrono::*;
-use self::tina::*;
+
+use chrono::*;
+use tina::*;
 
 
 #[test]

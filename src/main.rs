@@ -4,7 +4,9 @@ extern crate tina;
 
 use std::env;
 use std::collections::HashMap;
+
 use tina::*;
+
 
 fn load_code_dict(path: &str) -> Option<HashMap<[u8; 3], String>>
 {

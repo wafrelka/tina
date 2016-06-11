@@ -1,14 +1,14 @@
-extern crate oauthcli;
-extern crate url;
-extern crate hyper;
-
 use std::io::Read;
-use self::url::form_urlencoded::serialize;
-use self::hyper::{Client, Error};
-use self::hyper::client::Response;
-use self::hyper::method::Method;
-use self::hyper::status::StatusCode;
-use self::hyper::header::{Headers, Authorization, ContentType};
+
+use oauthcli::SignatureMethod::HmacSha1;
+use oauthcli::{timestamp, nonce, authorization_header};
+use url::Url;
+use url::form_urlencoded::serialize;
+use hyper::{Client, Error};
+use hyper::client::Response;
+use hyper::method::Method;
+use hyper::status::StatusCode;
+use hyper::header::{Headers, Authorization, ContentType};
 
 
 pub struct TwitterClient {
@@ -138,17 +138,17 @@ impl TwitterClient {
 	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(String, String)>)
 	 -> String
 	{
-		let oauth_header = oauthcli::authorization_header(
+		let oauth_header = authorization_header(
 			method,
-			url::Url::parse(api_url).unwrap(),
+			Url::parse(api_url).unwrap(),
 			None,
 			&self.consumer_key,
 			&self.consumer_secret,
 			Some(&self.access_key),
 			Some(&self.access_secret),
-			oauthcli::SignatureMethod::HmacSha1,
-			&oauthcli::timestamp(),
-			&oauthcli::nonce(),
+			HmacSha1,
+			&timestamp(),
+			&nonce(),
 			None,
 			None,
 			args.into_iter()

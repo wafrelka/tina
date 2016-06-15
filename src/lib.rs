@@ -12,5 +12,5 @@ mod emitter;
 
 pub use self::eew::*;
 pub use self::parser::*;
-pub use self::destination::{TwitterClient, TwitterEmitter};
+pub use self::destination::{TwitterClient, TwitterEmitter, StdoutLogger, StdoutLoggerEmitter};
 pub use self::source::WNIClient;

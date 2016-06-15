@@ -17,7 +17,7 @@ pub struct Emitter<'a, O, D>
 impl<'a, O, D> Emitter<'a, O, D>
 	where O: 'static + Send, D: 'static + Destination<O> + Send {
 
-	fn new(dest: Box<D>, formatter: &'a Fn(&EEW) -> Option<Box<O>>) -> Emitter<'a, O, D>
+	pub fn new(dest: Box<D>, formatter: &'a Fn(&EEW) -> Option<Box<O>>) -> Emitter<'a, O, D>
 	{
 		let (tx, rx) = channel::<Box<O>>();
 
@@ -53,7 +53,7 @@ impl<'a, O, D> Emitter<'a, O, D>
 		return e;
 	}
 
-	fn emit(&self, eew: &EEW) -> bool
+	pub fn emit(&self, eew: &EEW) -> bool
 	{
 		if let Some(d) = (*self.formatter)(eew) {
 			match self.tx.send(d) {

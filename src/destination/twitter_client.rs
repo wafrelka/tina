@@ -169,4 +169,4 @@ impl Destination<String> for TwitterClient {
 }
 
 unsafe impl Send for TwitterClient {}
-type TwitterEmitter<'a> = Emitter<'a, String, TwitterClient>;
+pub type TwitterEmitter<'a> = Emitter<'a, String, TwitterClient>;

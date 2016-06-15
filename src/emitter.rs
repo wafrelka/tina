@@ -1,28 +1,25 @@
 use std::marker::{PhantomData, Send};
 use std::thread;
-use std::sync::Arc;
 use std::sync::mpsc::{Sender, channel};
 
 use eew::EEW;
-use destination::{Destination, TwitterClient};
+use destination::Destination;
 
 
-unsafe impl Send for TwitterClient {}
-type TwitterEmitter = Emitter<String, TwitterClient>;
-
-
-pub struct Emitter<O: Send, D: Destination<O> + Send> {
+pub struct Emitter<'a, O, D>
+	where O: 'static + Send, D: 'static + Destination<O> + Send {
 	handle: thread::JoinHandle<()>,
-	tx: Sender<O>,
-	formatter: Box<(Fn(EEW) -> Option<O>)>,
+	tx: Sender<Box<O>>,
+	formatter: &'a (Fn(&EEW) -> Option<Box<O>>),
 	_marker: PhantomData<D>,
 }
 
-impl<O: 'static + Send, D: 'static + Destination<O> + Send> Emitter<O, D> {
+impl<'a, O, D> Emitter<'a, O, D>
+	where O: 'static + Send, D: 'static + Destination<O> + Send {
 
-	fn new<F>(dest: Box<D>, formatter: Box<(Fn(EEW) -> Option<O>)>) -> Emitter<O, D>
+	fn new(dest: Box<D>, formatter: &'a Fn(&EEW) -> Option<Box<O>>) -> Emitter<'a, O, D>
 	{
-		let (tx, rx) = channel();
+		let (tx, rx) = channel::<Box<O>>();
 
 		let t = thread::spawn(move || {
 
@@ -33,7 +30,7 @@ impl<O: 'static + Send, D: 'static + Destination<O> + Send> Emitter<O, D> {
 					Err(_) => panic!()
 				};
 
-				dest.output(r);
+				dest.output(*r);
 			}
 		});
 
@@ -45,5 +42,16 @@ impl<O: 'static + Send, D: 'static + Destination<O> + Send> Emitter<O, D> {
 		};
 
 		return e;
+	}
+
+	fn emit(&self, eew: &EEW) -> bool
+	{
+		if let Some(d) = (*self.formatter)(eew) {
+			match self.tx.send(d) {
+				Ok(_) => return true,
+				_ => panic!()
+			};
+		}
+		return false;
 	}
 }

@@ -161,9 +161,10 @@ impl TwitterClient {
 
 impl Destination<String> for TwitterClient {
 
-	fn output(&self, data: String) -> Result<(), ()>
+	fn output(&self, data: String) -> Result<(), String>
 	{
-		return self.update_status(data).map_err(|_| ());
+		let c = data.clone();
+		return self.update_status(data).map_err(|_| c);
 	}
 }
 

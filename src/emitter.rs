@@ -21,21 +21,30 @@ impl<'a, O, D> Emitter<'a, O, D>
 	{
 		let (tx, rx) = channel::<Box<O>>();
 
-		let t = thread::spawn(move || {
+		let handle = thread::spawn(move || {
 
 			loop {
 
-				let r = match rx.recv() {
-					Ok(d) => d,
+				let formatted_box = match rx.recv() {
+					Ok(data) => data,
 					Err(_) => panic!()
 				};
 
-				dest.output(*r);
+				let mut formatted = *formatted_box;
+
+				loop {
+
+					if let Err(returned) = dest.output(formatted) {
+						formatted = returned;
+					} else {
+						break;
+					}
+				}
 			}
 		});
 
 		let e = Emitter {
-			handle: t,
+			handle: handle,
 			tx: tx,
 			formatter: formatter,
 			_marker: PhantomData::default(),

@@ -94,11 +94,17 @@ pub fn format_eew_short(eew: &EEW) -> Option<String>
 			format_magnitude(detail.magnitude), format_depth(detail.depth),
 			format_position(detail.epicenter));
 
-		match detail.warning_status {
-			WarningStatus::Alert => head = "警報",
-			WarningStatus::Forecast => head = "予報",
-			_ => head = "不明"
-		}
+		head = match detail.warning_status {
+			WarningStatus::Alert => match detail.issue_pattern {
+				IssuePattern::HighAccuracy => "警報",
+				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => "警報(速報)",
+			},
+			WarningStatus::Forecast => match detail.issue_pattern {
+				IssuePattern::HighAccuracy => "予報",
+				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => "予報(速報)",
+			},
+			_ => "不明"
+		};
 	}
 
 	s.push_str(&format!("[{}] {} {}発生 / {} {}",

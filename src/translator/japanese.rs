@@ -125,11 +125,11 @@ pub fn format_eew_detailed(eew: &EEW) -> String
 
 		s.push_str(&format!("issue_pattern: {:?}, epicenter_name: {}, epicenter: {:?}, depth: {:?}, \
 			magnitude: {:?}, maximum_intensity: {:?}, epicenter_accuracy: {:?}, \
-			depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_caterogy: {:?} \
+			depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_category: {:?} \
 			warning_status: {:?}, intensity_change: {:?}, change_reason: {:?}\n",
 			detail.issue_pattern, detail.epicenter_name, detail.epicenter, detail.depth,
 			detail.magnitude, detail.maximum_intensity, detail.epicenter_accuracy,
-			detail.depth_accuracy, detail.magnitude_accuracy, detail.epicenter_caterogy,
+			detail.depth_accuracy, detail.magnitude_accuracy, detail.epicenter_category,
 			detail.warning_status, detail.intensity_change, detail.change_reason));
 
 		for ref area in &detail.area_info {

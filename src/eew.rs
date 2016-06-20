@@ -92,7 +92,7 @@ pub struct FullEEW {
 	pub depth_accuracy: DepthAccuracy,
 	pub magnitude_accuracy: MagnitudeAccuracy,
 
-	pub epicenter_caterogy: EpicenterCategory,
+	pub epicenter_category: EpicenterCategory,
 	pub warning_status: WarningStatus,
 	pub intensity_change: IntensityChange,
 	pub change_reason: ChangeReason,

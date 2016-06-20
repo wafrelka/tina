@@ -200,27 +200,36 @@ pub fn parse_jma_format(text: &[u8],
 		_ => return Err(JMAFormatParseError::InvalidLL)
 	};
 
-	let depth = match parse_number(&text[101..104]) {
-		Some(v) => Some(v as f32),
-		None => match &text[100..103] {
-			b"///" => None,
-			_ => return Err(JMAFormatParseError::InvalidDepth)
+	let depth = {
+		let t = &text[101..104];
+		match parse_number(t) {
+			Some(v) => Some(v as f32),
+			None => match t {
+				b"///" => None,
+				_ => return Err(JMAFormatParseError::InvalidDepth)
+			}
 		}
 	};
 
-	let magnitude = match parse_number(&text[105..107]) {
-		Some(v) => Some((v as f32) / 10.0),
-		None => match &text[104..106] {
-			b"///" => None,
-			_ => return Err(JMAFormatParseError::InvalidMagnitude)
+	let magnitude = {
+		let t = &text[105..107];
+		match parse_number(t) {
+			Some(v) => Some((v as f32) / 10.0),
+			None => match t {
+				b"//" => None,
+				_ => return Err(JMAFormatParseError::InvalidMagnitude)
+			}
 		}
 	};
 
-	let maximum_intensity = match parse_intensity(&text[108..110]) {
-		Some(v) => Some(v),
-		None => match &text[107..109] {
-			b"//" => None,
-			_ => return Err(JMAFormatParseError::InvalidMaximumIntensity)
+	let maximum_intensity = {
+		let t = &text[108..110];
+		match parse_intensity(t) {
+			Some(v) => Some(v),
+			None => match t {
+				b"//" => None,
+				_ => return Err(JMAFormatParseError::InvalidMaximumIntensity)
+			}
 		}
 	};
 
@@ -318,11 +327,14 @@ pub fn parse_jma_format(text: &[u8],
 				None => return Err(JMAFormatParseError::InvalidEBI)
 			};
 
-			let right_intensity = match parse_intensity(&part[8..10]) {
-				Some(v) => Some(v),
-				None => match &part[8..10] {
-					b"//" => None,
-					_ => return Err(JMAFormatParseError::InvalidEBI)
+			let right_intensity = {
+				let t = &part[8..10];
+				match parse_intensity(t) {
+					Some(v) => Some(v),
+					None => match t {
+						b"//" => None,
+						_ => return Err(JMAFormatParseError::InvalidEBI)
+					}
 				}
 			};
 
@@ -331,11 +343,14 @@ pub fn parse_jma_format(text: &[u8],
 				None => (left_intensity, None)
 			};
 
-			let reached_at = match parse_arrival_time(&part[11..17], &occurred_at) {
-				Some(v) => Some(v),
-				None => match &part[11..17] {
-					b"//////" => None,
-					_ => return Err(JMAFormatParseError::InvalidEBI)
+			let reached_at = {
+				let t = &part[11..17];
+				match parse_arrival_time(t, &occurred_at) {
+					Some(v) => Some(v),
+					None => match t {
+						b"//////" => None,
+						_ => return Err(JMAFormatParseError::InvalidEBI)
+					}
 				}
 			};
 

@@ -195,3 +195,47 @@ fn it_should_parse_ebi_part()
 
 	assert_eq!(result, expected);
 }
+
+#[test]
+fn it_should_parse_eew_with_unknown_values()
+{
+	let telegram = b"37 03 00 160610231341 C11 160610231254 \
+		ND20160610231334 NCN001 JD////////////// JN/// \
+		432 N354 E1369 /// // // RK6620/ RT00/// RC///// \
+		9999=";
+
+	let mut epicenter = HashMap::new();
+	let area = HashMap::new();
+	epicenter.insert(b"432".to_owned(), "岐阜県美濃中西部".to_owned());
+
+	let expected = EEW {
+		source: Source::Tokyo,
+		kind: Kind::Normal,
+		issued_at: UTC.ymd(2016, 6, 10).and_hms(14, 13, 41),
+		occurred_at: UTC.ymd(2016, 6, 10).and_hms(14, 12, 54),
+		id: "ND20160610231334".to_owned(),
+		status: Status::Normal,
+		number: 1,
+		detail: EEWDetail::Full(FullEEW {
+			issue_pattern: IssuePattern::HighAccuracy,
+			epicenter_name: "岐阜県美濃中西部".to_owned(),
+			epicenter: (35.4, 136.9),
+			depth: None,
+			magnitude: None,
+			maximum_intensity: None,
+			epicenter_accuracy: EpicenterAccuracy::NIEDHigh,
+			depth_accuracy: DepthAccuracy::NIEDHigh,
+			magnitude_accuracy: MagnitudeAccuracy::NIED,
+			epicenter_caterogy: EpicenterCategory::Land,
+			warning_status: WarningStatus::Forecast,
+			intensity_change: IntensityChange::Unknown,
+			change_reason: ChangeReason::Unknown,
+			area_info: vec!{}
+		})
+	};
+
+	let result = parse_jma_format(telegram, &epicenter, &area);
+
+	assert!(result.is_ok());
+	assert_eq!(result.unwrap(), expected);
+}

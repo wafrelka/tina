@@ -41,19 +41,6 @@ fn load_code_dict(path: &str) -> Option<HashMap<[u8; 3], String>>
 	return Some(dict);
 }
 
-fn format_for_stdout(eew: &EEW) -> Option<Box<String>>
-{
-	Some(Box::new(ja_format_eew_detailed(&eew)))
-}
-
-fn format_for_twitter(eew: &EEW) -> Option<Box<String>>
-{
-	match ja_format_eew_short(&eew) {
-		Some(v) => Some(Box::new(v)),
-		None => None
-	}
-}
-
 fn main()
 {
 	let args: Vec<String> = env::args().collect();
@@ -92,11 +79,19 @@ fn main()
 	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
 
 	let tc = Box::new(TwitterClient::new(tw_consumer_token, tw_consumer_secret, tw_access_token, tw_access_secret));
-	let tf = &format_for_twitter;
+	let tf = move |eew: &EEW| {
+		match ja_format_eew_short(&eew) {
+			Some(v) => Some(Box::new(v)),
+			None => None
+		}
+	};
 	let te = TwitterEmitter::new(tc, &tf);
+
 	let sl = Box::new(StdoutLogger::new());
-	let sf = &format_for_stdout;
-	let se = StdoutLoggerEmitter::new(sl, sf);
+	let sf = move |eew: &EEW| {
+		Some(Box::new(ja_format_eew_detailed(&eew)))
+	};
+	let se = StdoutLoggerEmitter::new(sl, &sf);
 
 	loop {
 

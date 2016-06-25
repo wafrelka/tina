@@ -7,13 +7,13 @@ use destination::Destination;
 
 
 pub struct Emitter<'a, O, F>
-	where O: 'static + Send, F: 'a + Fn(&EEW) -> Option<Box<O>> {
+	where O: 'static + Send, F: 'a + Fn(&[EEW]) -> Option<Box<O>> {
 	tx: Sender<Box<O>>,
 	formatter: &'a F,
 }
 
 impl<'a, O, F> Emitter<'a, O, F>
-	where O: 'static + Send, F: 'a + Fn(&EEW) -> Option<Box<O>> {
+	where O: 'static + Send, F: 'a + Fn(&[EEW]) -> Option<Box<O>> {
 
 	pub fn new<D>(dest: Box<D>, formatter: &'a F) -> Emitter<'a, O, F>
 		where D: 'static + Destination<O> + Send
@@ -46,7 +46,7 @@ impl<'a, O, F> Emitter<'a, O, F>
 		return e;
 	}
 
-	pub fn emit(&self, eew: &EEW) -> bool
+	pub fn emit(&self, eew: &[EEW]) -> bool
 	{
 		if let Some(d) = (*self.formatter)(eew) {
 			self.tx.send(d).expect("data sending should not fail");

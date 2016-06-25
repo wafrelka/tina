@@ -1,5 +1,4 @@
 use destination::interface::Destination;
-use emitter::Emitter;
 
 
 pub struct StdoutLogger { }
@@ -20,5 +19,3 @@ impl Destination<String> for StdoutLogger {
 		return Ok(());
 	}
 }
-
-pub type StdoutLoggerEmitter<'a> = Emitter<'a, String, StdoutLogger>;

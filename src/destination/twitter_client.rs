@@ -11,7 +11,6 @@ use hyper::status::StatusCode;
 use hyper::header::{Headers, Authorization, ContentType};
 
 use destination::Destination;
-use emitter::Emitter;
 
 
 pub struct TwitterClient {
@@ -169,4 +168,3 @@ impl Destination<String> for TwitterClient {
 }
 
 unsafe impl Send for TwitterClient {}
-pub type TwitterEmitter<'a> = Emitter<'a, String, TwitterClient>;

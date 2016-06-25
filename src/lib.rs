@@ -13,6 +13,7 @@ mod translator;
 
 pub use self::eew::*;
 pub use self::parser::*;
-pub use self::destination::{TwitterClient, TwitterEmitter, StdoutLogger, StdoutLoggerEmitter};
+pub use self::emitter::Emitter;
+pub use self::destination::{TwitterClient, StdoutLogger};
 pub use self::source::WNIClient;
 pub use self::translator::{ja_format_eew_short, ja_format_eew_detailed};

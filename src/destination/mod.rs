@@ -3,5 +3,5 @@ mod twitter_client;
 mod stdout_logger;
 
 pub use self::interface::Destination;
-pub use self::twitter_client::{TwitterClient, TwitterEmitter};
-pub use self::stdout_logger::{StdoutLogger, StdoutLoggerEmitter};
+pub use self::twitter_client::TwitterClient;
+pub use self::stdout_logger::StdoutLogger;

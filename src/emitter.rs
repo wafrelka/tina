@@ -1,4 +1,4 @@
-use std::marker::{PhantomData, Send};
+use std::marker::Send;
 use std::thread;
 use std::sync::mpsc::{Sender, channel};
 
@@ -6,18 +6,18 @@ use eew::EEW;
 use destination::Destination;
 
 
-pub struct Emitter<'a, O, D>
-	where O: 'static + Send, D: 'static + Destination<O> + Send {
+pub struct Emitter<'a, O, F>
+	where O: 'static + Send, F: 'a + Fn(&EEW) -> Option<Box<O>> {
 	handle: thread::JoinHandle<()>,
 	tx: Sender<Box<O>>,
-	formatter: &'a (Fn(&EEW) -> Option<Box<O>>),
-	_marker: PhantomData<D>,
+	formatter: &'a F,
 }
 
-impl<'a, O, D> Emitter<'a, O, D>
-	where O: 'static + Send, D: 'static + Destination<O> + Send {
+impl<'a, O, F> Emitter<'a, O, F>
+	where O: 'static + Send, F: 'a + Fn(&EEW) -> Option<Box<O>> {
 
-	pub fn new(dest: Box<D>, formatter: &'a Fn(&EEW) -> Option<Box<O>>) -> Emitter<'a, O, D>
+	pub fn new<D>(dest: Box<D>, formatter: &'a F) -> Emitter<'a, O, F>
+		where D: 'static + Destination<O> + Send
 	{
 		let (tx, rx) = channel::<Box<O>>();
 
@@ -25,12 +25,12 @@ impl<'a, O, D> Emitter<'a, O, D>
 
 			loop {
 
-				let formatted_box = match rx.recv() {
+				let received = match rx.recv() {
 					Ok(data) => data,
 					Err(_) => panic!()
 				};
 
-				let mut formatted = *formatted_box;
+				let mut formatted = *received;
 
 				loop {
 
@@ -47,7 +47,6 @@ impl<'a, O, D> Emitter<'a, O, D>
 			handle: handle,
 			tx: tx,
 			formatter: formatter,
-			_marker: PhantomData::default(),
 		};
 
 		return e;

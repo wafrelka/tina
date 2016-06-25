@@ -85,13 +85,13 @@ fn main()
 			None => None
 		}
 	};
-	let te = TwitterEmitter::new(tc, &tf);
+	let te = Emitter::new(tc, &tf);
 
 	let sl = Box::new(StdoutLogger::new());
 	let sf = move |eew: &EEW| {
 		Some(Box::new(ja_format_eew_detailed(&eew)))
 	};
-	let se = StdoutLoggerEmitter::new(sl, &sf);
+	let se = Emitter::new(sl, &sf);
 
 	loop {
 

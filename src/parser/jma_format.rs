@@ -270,7 +270,7 @@ pub fn parse_jma_format(text: &[u8],
 		_ => return Err(JMAFormatParseError::InvalidMagnitudeAccuracy)
 	};
 
-	let epicenter_caterogy = match text[121] {
+	let epicenter_category = match text[121] {
 		b'0' => EpicenterCategory::Land,
 		b'1' => EpicenterCategory::Sea,
 		b'/' => EpicenterCategory::Unknown,
@@ -398,7 +398,7 @@ pub fn parse_jma_format(text: &[u8],
 		epicenter_accuracy: epicenter_accuracy,
 		depth_accuracy: depth_accuracy,
 		magnitude_accuracy: magnitude_accuracy,
-		epicenter_caterogy: epicenter_caterogy,
+		epicenter_category: epicenter_category,
 		warning_status: warning_status,
 		intensity_change: intensity_change,
 		change_reason: change_reason,

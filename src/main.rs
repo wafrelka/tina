@@ -41,39 +41,13 @@ fn load_code_dict(path: &str) -> Option<HashMap<[u8; 3], String>>
 	return Some(dict);
 }
 
-fn print_eew(eew: &EEW)
-{
-	println!("[EEW: {} - {}]", eew.id, eew.number);
-	println!("source: {:?}, kind: {:?}, issued_at: {:?}, occurred_at: {:?}, status: {:?}",
-		eew.source, eew.kind, eew.issued_at, eew.occurred_at, eew.status);
-
-	if let EEWDetail::Full(ref detail) = eew.detail {
-
-		println!("issue_pattern: {:?}, epicenter_name: {}, epicenter: {:?}, depth: {:?}, \
-			magnitude: {:?}, maximum_intensity: {:?}, epicenter_accuracy: {:?}, \
-			depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_caterogy: {:?} \
-			warning_status: {:?}, intensity_change: {:?}, change_reason: {:?}",
-			detail.issue_pattern, detail.epicenter_name, detail.epicenter, detail.depth,
-			detail.magnitude, detail.maximum_intensity, detail.epicenter_accuracy,
-			detail.depth_accuracy, detail.magnitude_accuracy, detail.epicenter_caterogy,
-			detail.warning_status, detail.intensity_change, detail.change_reason);
-
-		for ref area in &detail.area_info {
-
-			println!("area_name: {}, minimum_intensity: {:?}, maximum_intensity: {:?}, \
-				reached_at: {:?}, warning_status: {:?}, wave_status: {:?}",
-				area.area_name, area.minimum_intensity, area.maximum_intensity,
-				area.reached_at, area.warning_status, area.wave_status);
-		}
-	}
-}
-
 fn main()
 {
 	let args: Vec<String> = env::args().collect();
 
-	if args.len() < 5 {
-		println!("usage: {} <epicenter_path> <area_path> <wni_id> <wni_password>", args[0]);
+	if args.len() < 9 {
+		println!("usage: {} <epicenter_path> <area_path> <wni_id> <wni_password> \
+			<tw_con_token> <tw_con_sec> <tw_ac_token> <tw_ac_sec>", args[0]);
 		return;
 	}
 
@@ -81,6 +55,10 @@ fn main()
 	let area_dict_path = args[2].clone();
 	let wni_id = args[3].clone();
 	let wni_password = args[4].clone();
+	let tw_consumer_token = args[5].clone();
+	let tw_consumer_secret = args[6].clone();
+	let tw_access_token = args[7].clone();
+	let tw_access_secret = args[8].clone();
 
 	let epicenter_dict = match load_code_dict(&epicenter_dict_path) {
 		Some(v) => v,
@@ -99,6 +77,25 @@ fn main()
 	};
 
 	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
+
+	let tc = Box::new(TwitterClient::new(tw_consumer_token, tw_consumer_secret, tw_access_token, tw_access_secret));
+	let tf = move |eews: &[EEW]| {
+		let eew = eews.last().unwrap();
+		match ja_format_eew_short(&eew) {
+			Some(v) => Some(Box::new(v)),
+			None => None
+		}
+	};
+	let te = Emitter::new(tc, &tf);
+
+	let sl = Box::new(StdoutLogger::new());
+	let sf = move |eews: &[EEW]| {
+		let eew = eews.last().unwrap();
+		Some(Box::new(ja_format_eew_detailed(&eew)))
+	};
+	let se = Emitter::new(sl, &sf);
+
+	let mut buffer = EEWBuffer::new();
 
 	loop {
 
@@ -120,7 +117,10 @@ fn main()
 				Ok(eew) => eew
 			};
 
-			print_eew(&eew);
+			let eews = buffer.append(eew);
+
+			se.emit(&eews);
+			te.emit(&eews);
 		}
 	}
 }

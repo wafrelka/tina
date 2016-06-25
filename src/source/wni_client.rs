@@ -98,34 +98,27 @@ impl WNIConnection {
 	{
 		let mut buffer = vec! {};
 
-		match self.reader.read_until(b'\x03', &mut buffer) {
+		let size = try!(self.reader.read_until(b'\x03', &mut buffer)
+			.map_err(|_| WNIError::Network));
 
-			Err(_) => {
-				return Err(WNIError::Network);
-			}
+		if size == 0 {
+			return Err(WNIError::ConnectionClosed);
+		}
 
-			Ok(size) => {
+		println!("Received: {}", String::from_utf8_lossy(&buffer));
 
-				if size == 0 {
-					return Err(WNIError::ConnectionClosed);
-				}
+		let left = try!(buffer.iter().rposition(|&x| x == b'\x02')
+			.ok_or(WNIError::InvalidData)) + 2;
+		let right = buffer.len() - 2;
 
-				println!("Received: {}", String::from_utf8_lossy(&buffer));
+		if left >= right {
+			return Err(WNIError::InvalidData);
+		}
 
-				let left = try!(buffer.iter().rposition(|&x| x == b'\x02')
-					.ok_or(WNIError::InvalidData)) + 2;
-				let right = buffer.len() - 2;
+		let raw_data = &buffer[left..right];
+		let eew = try!(parse_jma_format(raw_data, epicenter_dict, area_dict)
+			.map_err(|_| WNIError::InvalidData));
 
-				if left >= right {
-					return Err(WNIError::InvalidData);
-				}
-
-				let raw_data = &buffer[left..right];
-				let eew = try!(parse_jma_format(raw_data, epicenter_dict, area_dict)
-					.map_err(|_| WNIError::InvalidData));
-
-				return Ok(eew);
-			}
-		};
+		return Ok(eew);
 	}
 }

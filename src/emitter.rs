@@ -24,11 +24,7 @@ impl<'a, O, F> Emitter<'a, O, F>
 
 			loop {
 
-				let received = match rx.recv() {
-					Ok(data) => data,
-					Err(_) => panic!()
-				};
-
+				let received = rx.recv().expect("data receiving should not fail");
 				let mut formatted = *received;
 
 				loop {
@@ -53,10 +49,8 @@ impl<'a, O, F> Emitter<'a, O, F>
 	pub fn emit(&self, eew: &EEW) -> bool
 	{
 		if let Some(d) = (*self.formatter)(eew) {
-			match self.tx.send(d) {
-				Ok(_) => return true,
-				_ => panic!()
-			};
+			self.tx.send(d).expect("data sending should not fail");
+			return true;
 		}
 		return false;
 	}

@@ -1,4 +1,4 @@
-use destination::interface::Destination;
+use destination::Destination;
 
 
 pub struct StdoutLogger { }

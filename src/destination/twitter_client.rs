@@ -55,40 +55,33 @@ impl TwitterClient {
 	{
 		let api_url = "https://api.twitter.com/1.1/statuses/update.json";
 		let args = vec![("status".to_string(), message)];
-		let res = self.request(Method::Post, api_url, args);
+		let result = self.request(Method::Post, api_url, args);
 
-		match res {
-			Ok(mut res) => {
-				match res.status {
+		let mut res = try!(result.map_err(|_| StatusUpdateError::Network));
 
-					StatusCode::Forbidden => {
+		match res.status {
 
-						let mut body = String::new();
+			StatusCode::Forbidden => {
 
-						if let Err(_) = res.read_to_string(&mut body) {
-							return Err(StatusUpdateError::Unknown);
-						}
+				let mut body = String::new();
 
-						if body.contains("140") {
-							return Err(StatusUpdateError::Invalid);
-						} else if body.contains("duplicate") {
-							return Err(StatusUpdateError::Duplicated);
-						}
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Unknown));
 
-						return Err(StatusUpdateError::Unknown);
-
-					},
-
-					StatusCode::Ok => return Ok(()),
-					StatusCode::TooManyRequests =>
-						return Err(StatusUpdateError::RateLimitExceeded),
-					StatusCode::Unauthorized =>
-						return Err(StatusUpdateError::Unauthorized),
-					_ => return Err(StatusUpdateError::Unknown)
+				if body.contains("140") {
+					return Err(StatusUpdateError::Invalid);
+				} else if body.contains("duplicate") {
+					return Err(StatusUpdateError::Duplicated);
 				}
+
+				return Err(StatusUpdateError::Unknown);
 			},
-			Err(_) => return Err(StatusUpdateError::Network)
-		}
+
+			StatusCode::Ok => return Ok(()),
+
+			StatusCode::TooManyRequests => return Err(StatusUpdateError::RateLimitExceeded),
+			StatusCode::Unauthorized => return Err(StatusUpdateError::Unauthorized),
+			_ => return Err(StatusUpdateError::Unknown)
+		};
 	}
 
 	fn request(&self, method: Method, api_url: &str, args: Vec<(String, String)>)

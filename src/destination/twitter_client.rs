@@ -159,5 +159,3 @@ impl Destination<String> for TwitterClient {
 		return self.update_status(data).map_err(|_| c);
 	}
 }
-
-unsafe impl Send for TwitterClient {}

@@ -3,6 +3,7 @@ extern crate url;
 #[macro_use] extern crate hyper;
 extern crate chrono;
 extern crate crypto;
+extern crate rand;
 
 mod eew;
 mod parser;

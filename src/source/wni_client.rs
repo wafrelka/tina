@@ -7,6 +7,7 @@ use hyper::client::Response;
 use hyper::header::Headers;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
+use rand::{thread_rng, Rng};
 
 use eew::EEW;
 use parser::parse_jma_format;
@@ -54,7 +55,10 @@ impl WNIClient {
 		let mut body = String::new();
 
 		try!(res.read_to_string(&mut body).map_err(|_| WNIError::Network));
-		return body.split('\n').next().ok_or(WNIError::Network).map(|s| s.to_string());
+
+		let servers: Vec<&str> = body.split('\n').filter(|&s| s != "").collect();
+
+		return thread_rng().choose(&servers).ok_or(WNIError::Network).map(|s| s.to_string());
 	}
 
 	pub fn connect(&self) -> Result<WNIConnection, WNIError>

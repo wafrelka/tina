@@ -1,3 +1,4 @@
+mod eew_extension;
 mod japanese;
 
 pub use self::japanese::format_eew_short as ja_format_eew_short;

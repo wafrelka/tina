@@ -16,7 +16,7 @@ impl<'a, O, F> Emitter<'a, O, F>
 	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
 
 	pub fn new<D>(dest: Box<D>, formatter: &'a F) -> Emitter<'a, O, F>
-		where D: 'static + Destination<O> + Send
+		where D: 'static + Destination<O>
 	{
 		let (tx, rx) = channel::<Box<O>>();
 

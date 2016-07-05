@@ -6,6 +6,7 @@ extern crate crypto;
 extern crate rand;
 
 mod eew;
+mod eew_extension;
 mod parser;
 mod emitter;
 mod eew_buffer;
@@ -14,9 +15,10 @@ mod destination;
 mod translator;
 
 pub use self::eew::*;
+pub use self::eew_extension::*;
 pub use self::parser::*;
 pub use self::emitter::Emitter;
 pub use self::eew_buffer::EEWBuffer;
 pub use self::source::{WNIClient};
 pub use self::destination::{TwitterClient, StdoutLogger};
-pub use self::translator::{ja_format_eew_short, ja_format_eew_detailed};
+pub use self::translator::{ja_format_eew_short, format_eew_full};

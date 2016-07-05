@@ -1,13 +1,16 @@
+use std::cmp::Ordering;
+
 use chrono::*;
 
 use eew::*;
+use eew_extension::*;
 
 
-pub fn format_datetime(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime::StrftimeItems>
+pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime::StrftimeItems>
 {
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
-	const DATETIME_FORMAT: &'static str = "%H:%M:%S";
-	return dt.with_timezone(&jst).format(DATETIME_FORMAT);
+	const TIME_FORMAT: &'static str = "%H:%M:%S";
+	return dt.with_timezone(&jst).format(TIME_FORMAT);
 }
 
 pub fn format_eew_number(eew: &EEW) -> String
@@ -41,105 +44,68 @@ pub fn format_depth(d: Option<f32>) -> String
 	}
 }
 
-pub fn format_intensity(i: Option<f32>) -> String
+pub fn format_intensity(i: IntensityClass) -> String
 {
 	match i {
-		None => "震度不明",
-		Some(f) if f < 0.5 => "震度0",
-		Some(f) if f < 1.5 => "震度1",
-		Some(f) if f < 2.5 => "震度2",
-		Some(f) if f < 3.5 => "震度3",
-		Some(f) if f < 4.5 => "震度4",
-		Some(f) if f < 5.0 => "震度5弱",
-		Some(f) if f < 5.5 => "震度5強",
-		Some(f) if f < 6.0 => "震度6弱",
-		Some(f) if f < 6.5 => "震度6強",
-		Some(_) => "震度7",
+		IntensityClass::Unknown => "震度不明",
+		IntensityClass::Zero => "震度0",
+		IntensityClass::One => "震度1",
+		IntensityClass::Two => "震度2",
+		IntensityClass::Three => "震度3",
+		IntensityClass::Four => "震度4",
+		IntensityClass::FiveMinus => "震度5弱",
+		IntensityClass::FivePlus => "震度5強",
+		IntensityClass::SixMinus => "震度6弱",
+		IntensityClass::SixPlus => "震度6強",
+		IntensityClass::Seven => "震度7"
 	}.to_string()
 }
 
-pub fn format_eew_short(eew: &EEW) -> Option<String>
+pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 {
-	match eew.kind {
-		Kind::Drill | Kind::DrillCancel => return None,
-		Kind::Reference | Kind::Test => return None,
-		_ => {}
+	let prev_intensity = prev_opt.map(|p| p.get_maximum_intensity_class());
+
+	match eew.get_eew_phase() {
+		None => return None,
+		Some(EEWPhase::Cancel) =>
+			return Some(format!("[取消] --- / {} {}", format_eew_number(eew), eew.id)),
+		Some(EEWPhase::Forecast) | Some(EEWPhase::Alert) => {}
 	};
 
-	let mut s = String::new();
-
-	if eew.kind == Kind::Cancel {
-
-		s.push_str(&format!("[取消] --- / {} {}", format_eew_number(eew), eew.id));
-		return Some(s);
-	}
-
-	let mut head = "速報";
 	let ref id = eew.id;
 	let num_str = format_eew_number(eew);
 
-	let mut detail_str = "---".to_string();
+	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
+		(Some(EEWPhase::Forecast), true) => "予報",
+		(Some(EEWPhase::Forecast), false) => "予報(速報)",
+		(Some(EEWPhase::Alert), true) => "警報",
+		(Some(EEWPhase::Alert), false) => "警報(速報)",
+		_ => unreachable!()
+	};
 
-	if let EEWDetail::Full(ref detail) = eew.detail {
+	let updown = match prev_intensity.map(|i| eew.get_maximum_intensity_class().cmp(&i)) {
+		Some(Ordering::Greater) => "↑",
+		Some(Ordering::Less) => "↓",
+		_ => ""
+	};
 
-		let updown = match detail.intensity_change {
-			IntensityChange::Up => "↑",
-			IntensityChange::Down => "↓",
-			_ => ""
-		};
-		let intensity = format_intensity(detail.maximum_intensity) + updown;
+	let detail_str = match eew.detail {
 
-		detail_str = format!("{} {} {} {} ({})",
-			detail.epicenter_name, intensity,
-			format_magnitude(detail.magnitude), format_depth(detail.depth),
-			format_position(detail.epicenter));
+		EEWDetail::Cancel => "---".to_string(),
 
-		head = match detail.warning_status {
-			WarningStatus::Alert => match detail.issue_pattern {
-				IssuePattern::HighAccuracy => "警報",
-				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => "警報(速報)",
-			},
-			WarningStatus::Forecast => match detail.issue_pattern {
-				IssuePattern::HighAccuracy => "予報",
-				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => "予報(速報)",
-			},
-			_ => "不明"
-		};
-	}
+		EEWDetail::Full(ref detail) => {
 
-	s.push_str(&format!("[{}] {} {}発生 / {} {}",
-		head, detail_str, format_datetime(&eew.occurred_at), num_str, id));
+			let intensity = format_intensity(eew.get_maximum_intensity_class());
+
+			format!("{} {} {} {} ({})",
+				detail.epicenter_name, intensity,
+				format_magnitude(detail.magnitude), format_depth(detail.depth),
+				format_position(detail.epicenter))
+		}
+	};
+
+	let s = format!("[{}{}] {} {}発生 / {} {}",
+		head, updown, detail_str, format_time(&eew.occurred_at), num_str, id);
 
 	return Some(s);
-}
-
-pub fn format_eew_detailed(eew: &EEW) -> String
-{
-	let mut s = String::new();
-
-	s.push_str(&format!("[EEW: {} - {}]\n", eew.id, eew.number));
-	s.push_str(&format!("source: {:?}, kind: {:?}, issued_at: {:?}, occurred_at: {:?}, status: {:?}\n",
-		eew.source, eew.kind, eew.issued_at, eew.occurred_at, eew.status));
-
-	if let EEWDetail::Full(ref detail) = eew.detail {
-
-		s.push_str(&format!("issue_pattern: {:?}, epicenter_name: {}, epicenter: {:?}, depth: {:?}, \
-			magnitude: {:?}, maximum_intensity: {:?}, epicenter_accuracy: {:?}, \
-			depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_category: {:?} \
-			warning_status: {:?}, intensity_change: {:?}, change_reason: {:?}\n",
-			detail.issue_pattern, detail.epicenter_name, detail.epicenter, detail.depth,
-			detail.magnitude, detail.maximum_intensity, detail.epicenter_accuracy,
-			detail.depth_accuracy, detail.magnitude_accuracy, detail.epicenter_category,
-			detail.warning_status, detail.intensity_change, detail.change_reason));
-
-		for ref area in &detail.area_info {
-
-			s.push_str(&format!("area_name: {}, minimum_intensity: {:?}, maximum_intensity: {:?}, \
-				reached_at: {:?}, warning_status: {:?}, wave_status: {:?}\n",
-				area.area_name, area.minimum_intensity, area.maximum_intensity,
-				area.reached_at, area.warning_status, area.wave_status));
-		}
-	}
-
-	return s;
 }

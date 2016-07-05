@@ -2,96 +2,59 @@ extern crate yaml_rust;
 extern crate csv;
 extern crate tina;
 
+mod config;
+
 use std::env;
-use std::collections::HashMap;
 
 use tina::*;
+use config::*;
 
-
-fn load_code_dict(path: &str) -> Option<HashMap<[u8; 3], String>>
-{
-	let mut reader = match csv::Reader::from_file(path) {
-		Ok(v) => v,
-		Err(_) => return None
-	};
-
-	let mut dict = HashMap::new();
-
-	for record in reader.decode() {
-
-		let (code, name): (String, String) = match record {
-			Ok(v) => v,
-			Err(_) => return None
-		};
-
-		let mut encoded = [0; 3];
-		let bytes = code.as_bytes();
-
-		if bytes.len() != encoded.len() {
-			return None;
-		}
-
-		for i in 0..(encoded.len()) {
-			encoded[i] = bytes[i];
-		}
-
-		dict.insert(encoded, name);
-	}
-
-	return Some(dict);
-}
 
 fn main()
 {
 	let args: Vec<String> = env::args().collect();
 
-	if args.len() < 9 {
-		println!("usage: {} <epicenter_path> <area_path> <wni_id> <wni_password> \
-			<tw_con_token> <tw_con_sec> <tw_ac_token> <tw_ac_sec>", args[0]);
-		return;
-	}
-
-	let epicenter_dict_path = args[1].clone();
-	let area_dict_path = args[2].clone();
-	let wni_id = args[3].clone();
-	let wni_password = args[4].clone();
-	let tw_consumer_token = args[5].clone();
-	let tw_consumer_secret = args[6].clone();
-	let tw_access_token = args[7].clone();
-	let tw_access_secret = args[8].clone();
-
-	let epicenter_dict = match load_code_dict(&epicenter_dict_path) {
-		Some(v) => v,
-		None => {
-			println!("cannot load epicenter dict");
-			return;
-		}
+	let conf_path = match args.len() >= 2 {
+		true => args[1].as_str(),
+		false => "tina.yaml",
 	};
 
-	let area_dict = match load_code_dict(&area_dict_path) {
-		Some(v) => v,
-		None => {
-			println!("cannot load area dict");
+	let conf = match Config::load_config(conf_path) {
+		Err(err) => {
+			println!("Error while loading config ({:?})", err);
 			return;
-		}
+		},
+		Ok(c) => c
 	};
 
-	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
-
-	let tc = Box::new(TwitterClient::new(tw_consumer_token, tw_consumer_secret, tw_access_token, tw_access_secret));
-	let tf = move |_: &[EEW], latest: &EEW| {
+	let tw_func = |_: &[EEW], latest: &EEW| {
 		match ja_format_eew_short(latest, None) {
 			Some(v) => Some(Box::new(v)),
 			None => None
 		}
 	};
-	let te = Emitter::new(tc, &tf);
 
-	let sl = Box::new(StdoutLogger::new());
-	let sf = move |_: &[EEW], latest: &EEW| {
+	let stdout_func = |_: &[EEW], latest: &EEW| {
 		Some(Box::new(format_eew_full(latest)))
 	};
-	let se = Emitter::new(sl, &sf);
+
+	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
+	let mut dests: Vec<Box<Emit>> = Vec::new();
+
+	if conf.twitter.is_some() {
+		let t = &conf.twitter.unwrap();
+		let tc = Box::new(TwitterClient::new(
+			t.consumer_token.clone(), t.consumer_secret.clone(),
+			t.access_token.clone(), t.access_secret.clone()));
+		let te = Box::new(Emitter::new(tc, &tw_func));
+		dests.push(te);
+		println!("Use: Twitter");
+	}
+
+	let sl = Box::new(StdoutLogger::new());
+	let se = Box::new(Emitter::new(sl, &stdout_func));
+	dests.push(se);
+	println!("Use: Stdout");
 
 	let mut buffer = EEWBuffer::new();
 
@@ -107,7 +70,7 @@ fn main()
 
 		loop {
 
-			let eew = match connection.wait_for_telegram(&epicenter_dict, &area_dict) {
+			let eew = match connection.wait_for_telegram(&conf.epicenter_dict, &conf.area_dict) {
 				Err(e) => {
 					println!("StreamingError: {:?}", e);
 					break;
@@ -116,8 +79,9 @@ fn main()
 			};
 
 			if let Some(eews) = buffer.append(&eew) {
-				se.emit(eews, &eew);
-				te.emit(eews, &eew);
+				for d in dests.iter() {
+					d.emit(&eews, &eew);
+				}
 			}
 		}
 	}

@@ -12,6 +12,18 @@ pub struct Emitter<'a, O, F>
 	formatter: &'a F,
 }
 
+pub trait Emit {
+	fn emit(&self, eews: &[EEW], latest: &EEW) -> bool;
+}
+
+impl<'a, O, F> Emit for Emitter<'a, O, F>
+	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
+	fn emit(&self, eews: &[EEW], latest: &EEW) -> bool
+	{
+		self.emit(eews, latest)
+	}
+}
+
 impl<'a, O, F> Emitter<'a, O, F>
 	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
 

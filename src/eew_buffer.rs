@@ -29,7 +29,7 @@ impl EEWBuffer {
 			b.first().map(|ref e| e.id.as_str()) == Some(eew_id));
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: EEW) {
+	fn extend_block(&mut self, idx: usize, eew: &EEW) {
 
 		let ref mut block = self.buffer[idx];
 
@@ -39,13 +39,13 @@ impl EEWBuffer {
 		};
 
 		if is_latest {
-			block.push(eew);
+			block.push(eew.clone());
 		}
 	}
 
-	fn create_block(&mut self, eew: EEW) {
+	fn create_block(&mut self, eew: &EEW) {
 
-		let block = vec! { eew };
+		let block = vec! { eew.clone() };
 		self.buffer.push_back(block);
 
 		while self.buffer.len() > self.max_block_count {
@@ -53,7 +53,7 @@ impl EEWBuffer {
 		}
 	}
 
-	pub fn append(&mut self, eew: EEW) -> &[EEW]
+	pub fn append(&mut self, eew: &EEW) -> &[EEW]
 	{
 		match self.lookup(&eew.id) {
 

@@ -24,13 +24,11 @@ fn it_should_hold_related_eews_within_the_same_block()
 	let eew4 = make_dummy_eew("B", 1);
 
 	let mut buf = EEWBuffer::with_capacity(4);
-	let es1 = [eew1.clone(), eew2.clone(), eew3.clone()];
-	let es2 = [eew4.clone()];
 
-	buf.append(eew1);
-	buf.append(eew2);
-	assert!(buf.append(eew3) == &es1);
-	assert!(buf.append(eew4) == &es2);
+	buf.append(&eew1);
+	buf.append(&eew2);
+	assert!(buf.append(&eew3) == [eew1, eew2, eew3]);
+	assert!(buf.append(&eew4) == [eew4]);
 }
 
 #[test]
@@ -42,12 +40,11 @@ fn it_should_not_save_old_eew()
 	let eew4 = make_dummy_eew("A", 4);
 
 	let mut buf = EEWBuffer::with_capacity(4);
-	let es1 = [eew1.clone(), eew4.clone()];
 
-	buf.append(eew1);
-	buf.append(eew4);
-	buf.append(eew2);
-	assert!(buf.append(eew3) == &es1);
+	buf.append(&eew1);
+	buf.append(&eew4);
+	buf.append(&eew2);
+	assert!(buf.append(&eew3) == [eew1, eew4]);
 }
 
 #[test]
@@ -61,14 +58,12 @@ fn it_should_erase_old_blocks_with_fifo_manner()
 	let eewd2 = make_dummy_eew("D", 2);
 
 	let mut buf = EEWBuffer::with_capacity(2);
-	let esa = [eewa2.clone()];
-	let esd = [eewd1.clone(), eewd2.clone()];
 
-	buf.append(eewa1);
-	buf.append(eewb);
-	buf.append(eewc);
-	buf.append(eewd1);
+	buf.append(&eewa1);
+	buf.append(&eewb);
+	buf.append(&eewc);
+	buf.append(&eewd1);
 
-	assert!(buf.append(eewa2) == &esa);
-	assert!(buf.append(eewd2) == &esd);
+	assert!(buf.append(&eewa2) == [eewa2]);
+	assert!(buf.append(&eewd2) == [eewd1, eewd2]);
 }

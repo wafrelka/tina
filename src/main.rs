@@ -117,7 +117,7 @@ fn main()
 				Ok(eew) => eew
 			};
 
-			let eews = buffer.append(eew);
+			let eews = buffer.append(&eew);
 
 			se.emit(&eews);
 			te.emit(&eews);

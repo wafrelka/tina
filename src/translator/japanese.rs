@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use chrono::*;
 
 use eew::*;
@@ -59,17 +61,16 @@ pub fn format_intensity(i: IntensityClass) -> String
 	}.to_string()
 }
 
-pub fn format_eew_short(eew: &EEW) -> Option<String>
+pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 {
-	match eew.kind {
-		Kind::Drill | Kind::DrillCancel => return None,
-		Kind::Reference | Kind::Test => return None,
-		_ => {}
-	};
+	let prev_intensity = prev_opt.map(|p| p.get_maximum_intensity_class());
 
-	if eew.get_eew_phase() == Some(EEWPhase::Cancel) {
-		return Some(format!("[取消] --- / {} {}", format_eew_number(eew), eew.id));
-	}
+	match eew.get_eew_phase() {
+		None => return None,
+		Some(EEWPhase::Cancel) =>
+			return Some(format!("[取消] --- / {} {}", format_eew_number(eew), eew.id)),
+		Some(EEWPhase::Forecast) | Some(EEWPhase::Alert) => {}
+	};
 
 	let ref id = eew.id;
 	let num_str = format_eew_number(eew);
@@ -79,7 +80,13 @@ pub fn format_eew_short(eew: &EEW) -> Option<String>
 		(Some(EEWPhase::Forecast), false) => "予報(速報)",
 		(Some(EEWPhase::Alert), true) => "警報",
 		(Some(EEWPhase::Alert), false) => "警報(速報)",
-		_ => "不明"
+		_ => unreachable!()
+	};
+
+	let updown = match prev_intensity.map(|i| eew.get_maximum_intensity_class().cmp(&i)) {
+		Some(Ordering::Greater) => "↑",
+		Some(Ordering::Less) => "↓",
+		_ => ""
 	};
 
 	let detail_str = match eew.detail {
@@ -88,12 +95,7 @@ pub fn format_eew_short(eew: &EEW) -> Option<String>
 
 		EEWDetail::Full(ref detail) => {
 
-			let updown = match detail.intensity_change {
-				IntensityChange::Up => "↑",
-				IntensityChange::Down => "↓",
-				_ => ""
-			};
-			let intensity = format_intensity(eew.get_maximum_intensity_class()) + updown;
+			let intensity = format_intensity(eew.get_maximum_intensity_class());
 
 			format!("{} {} {} {} ({})",
 				detail.epicenter_name, intensity,
@@ -102,8 +104,8 @@ pub fn format_eew_short(eew: &EEW) -> Option<String>
 		}
 	};
 
-	let s = format!("[{}] {} {}発生 / {} {}",
-		head, detail_str, format_time(&eew.occurred_at), num_str, id);
+	let s = format!("[{}{}] {} {}発生 / {} {}",
+		head, updown, detail_str, format_time(&eew.occurred_at), num_str, id);
 
 	return Some(s);
 }

@@ -80,7 +80,7 @@ fn main()
 
 	let tc = Box::new(TwitterClient::new(tw_consumer_token, tw_consumer_secret, tw_access_token, tw_access_secret));
 	let tf = move |eews: &[EEW], latest: &EEW| {
-		match ja_format_eew_short(latest) {
+		match ja_format_eew_short(latest, None) {
 			Some(v) => Some(Box::new(v)),
 			None => None
 		}

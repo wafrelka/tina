@@ -4,14 +4,13 @@ use eew::*;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub enum EEWPhase {
 	Cancel,
-	FastForecast,
 	Forecast,
-	FastAlert,
 	Alert
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub enum IntensityClass {
+	Unknown,
 	Zero,
 	One,
 	Two,
@@ -30,24 +29,15 @@ pub fn get_eew_phase(eew: &EEW) -> Option<EEWPhase>
 	match eew.kind {
 		Kind::Drill | Kind::DrillCancel => return None,
 		Kind::Reference | Kind::Test => return None,
-		_ => {}
+		Kind::Cancel => return Some(EEWPhase::Cancel),
+		Kind::Normal => {}
 	};
-
-	if eew.kind == Kind::Cancel {
-		return Some(EEWPhase::Cancel);
-	}
 
 	if let EEWDetail::Full(ref detail) = eew.detail {
 
 		let phase = match detail.warning_status {
-			WarningStatus::Alert => match detail.issue_pattern {
-				IssuePattern::HighAccuracy => EEWPhase::Alert,
-				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => EEWPhase::FastAlert
-			},
-			WarningStatus::Forecast => match detail.issue_pattern {
-				IssuePattern::HighAccuracy => EEWPhase::Forecast,
-				IssuePattern::LowAccuracy | IssuePattern::IntensityOnly => EEWPhase::FastForecast
-			},
+			WarningStatus::Alert => EEWPhase::Alert,
+			WarningStatus::Forecast => EEWPhase::Forecast,
 			_ => return None
 		};
 
@@ -58,18 +48,22 @@ pub fn get_eew_phase(eew: &EEW) -> Option<EEWPhase>
 }
 
 impl IntensityClass {
-	pub fn new(intensity: f32) -> IntensityClass {
-		match intensity {
-			x if x < 0.5 => IntensityClass::Zero,
-			x if x < 1.5 => IntensityClass::One,
-			x if x < 2.5 => IntensityClass::Two,
-			x if x < 3.5 => IntensityClass::Three,
-			x if x < 4.5 => IntensityClass::Four,
-			x if x < 5.0 => IntensityClass::FiveMinus,
-			x if x < 5.5 => IntensityClass::FivePlus,
-			x if x < 6.0 => IntensityClass::SixMinus,
-			x if x < 6.5 => IntensityClass::SixPlus,
-			_ => IntensityClass::Seven
+	pub fn new(intensity: Option<f32>) -> IntensityClass {
+		if let Some(i) = intensity {
+			match i {
+				x if x < 0.5 => IntensityClass::Zero,
+				x if x < 1.5 => IntensityClass::One,
+				x if x < 2.5 => IntensityClass::Two,
+				x if x < 3.5 => IntensityClass::Three,
+				x if x < 4.5 => IntensityClass::Four,
+				x if x < 5.0 => IntensityClass::FiveMinus,
+				x if x < 5.5 => IntensityClass::FivePlus,
+				x if x < 6.0 => IntensityClass::SixMinus,
+				x if x < 6.5 => IntensityClass::SixPlus,
+				_ => IntensityClass::Seven
+			}
+		} else {
+			IntensityClass::Unknown
 		}
 	}
 }
@@ -80,10 +74,20 @@ impl EEW {
 		get_eew_phase(&self)
 	}
 
-	pub fn get_maximum_intensity_class(&self) -> Option<IntensityClass> {
+	pub fn is_high_accuracy(&self) -> bool {
 		match self.detail {
-			EEWDetail::Full(ref detail) => detail.maximum_intensity.map(|i| IntensityClass::new(i)),
-			EEWDetail::Cancel => None
+			EEWDetail::Full(ref detail) => match detail.issue_pattern {
+				IssuePattern::HighAccuracy => true,
+				_ => false
+			},
+			EEWDetail::Cancel => false
+		}
+	}
+
+	pub fn get_maximum_intensity_class(&self) -> IntensityClass {
+		match self.detail {
+			EEWDetail::Full(ref detail) => IntensityClass::new(detail.maximum_intensity),
+			EEWDetail::Cancel => IntensityClass::Unknown
 		}
 	}
 }

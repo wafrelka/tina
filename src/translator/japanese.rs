@@ -42,22 +42,20 @@ pub fn format_depth(d: Option<f32>) -> String
 	}
 }
 
-pub fn format_intensity(i: Option<IntensityClass>) -> String
+pub fn format_intensity(i: IntensityClass) -> String
 {
 	match i {
-		None => "震度不明",
-		Some(c) => match c {
-			IntensityClass::Zero => "震度0",
-			IntensityClass::One => "震度1",
-			IntensityClass::Two => "震度2",
-			IntensityClass::Three => "震度3",
-			IntensityClass::Four => "震度4",
-		 	IntensityClass::FiveMinus => "震度5弱",
-			IntensityClass::FivePlus => "震度5強",
-			IntensityClass::SixMinus => "震度6弱",
-			IntensityClass::SixPlus => "震度6強",
-			IntensityClass::Seven => "震度7"
-		}
+		IntensityClass::Unknown => "震度不明",
+		IntensityClass::Zero => "震度0",
+		IntensityClass::One => "震度1",
+		IntensityClass::Two => "震度2",
+		IntensityClass::Three => "震度3",
+		IntensityClass::Four => "震度4",
+		IntensityClass::FiveMinus => "震度5弱",
+		IntensityClass::FivePlus => "震度5強",
+		IntensityClass::SixMinus => "震度6弱",
+		IntensityClass::SixPlus => "震度6強",
+		IntensityClass::Seven => "震度7"
 	}.to_string()
 }
 
@@ -76,11 +74,11 @@ pub fn format_eew_short(eew: &EEW) -> Option<String>
 	let ref id = eew.id;
 	let num_str = format_eew_number(eew);
 
-	let head = match eew.get_eew_phase() {
-		Some(EEWPhase::FastForecast) => "予報(速報)",
-		Some(EEWPhase::Forecast) => "予報",
-		Some(EEWPhase::FastAlert) => "警報(速報)",
-		Some(EEWPhase::Alert) => "警報",
+	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
+		(Some(EEWPhase::Forecast), true) => "予報",
+		(Some(EEWPhase::Forecast), false) => "予報(速報)",
+		(Some(EEWPhase::Alert), true) => "警報",
+		(Some(EEWPhase::Alert), false) => "警報(速報)",
 		_ => "不明"
 	};
 

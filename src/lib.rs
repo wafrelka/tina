@@ -19,4 +19,4 @@ pub use self::emitter::Emitter;
 pub use self::eew_buffer::EEWBuffer;
 pub use self::source::{WNIClient};
 pub use self::destination::{TwitterClient, StdoutLogger};
-pub use self::translator::{ja_format_eew_short, ja_format_eew_detailed};
+pub use self::translator::{ja_format_eew_short, format_eew_full};

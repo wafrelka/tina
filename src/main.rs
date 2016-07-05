@@ -89,7 +89,7 @@ fn main()
 
 	let sl = Box::new(StdoutLogger::new());
 	let sf = move |eews: &[EEW], latest: &EEW| {
-		Some(Box::new(ja_format_eew_detailed(latest)))
+		Some(Box::new(format_eew_full(latest)))
 	};
 	let se = Emitter::new(sl, &sf);
 

@@ -29,7 +29,7 @@ impl EEWBuffer {
 			b.first().map(|ref e| e.id.as_str()) == Some(eew_id));
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: &EEW) {
+	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {
 
 		let ref mut block = self.buffer[idx];
 
@@ -41,6 +41,8 @@ impl EEWBuffer {
 		if is_latest {
 			block.push(eew.clone());
 		}
+
+		return is_latest;
 	}
 
 	fn create_block(&mut self, eew: &EEW) {
@@ -53,17 +55,19 @@ impl EEWBuffer {
 		}
 	}
 
-	pub fn append(&mut self, eew: &EEW) -> &[EEW]
+	pub fn append(&mut self, eew: &EEW) -> Option<&[EEW]>
 	{
 		match self.lookup(&eew.id) {
 
 			Some(idx) => {
-				self.extend_block(idx, eew);
-				&self.buffer[idx]
+				match self.extend_block(idx, eew) {
+					true => Some(&self.buffer[idx]),
+					false => None
+				}
 			},
 			None => {
 				self.create_block(eew);
-				&self.buffer.back().expect("a buffer must have at least 1 block")
+				Some(&self.buffer.back().expect("a buffer must have at least 1 block"))
 			}
 		}
 	}

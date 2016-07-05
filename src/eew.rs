@@ -1,57 +1,57 @@
 use chrono::*;
 
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum IssuePattern { IntensityOnly, LowAccuracy, HighAccuracy }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Source { Tokyo, Osaka }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Test }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Status { Normal, Correction, CancelCorrection, LastWithCorrection, Last, Unknown }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum EpicenterAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
 	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Unknown
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum DepthAccuracy {
 	Single, Territory, GridSearchLow, GridSearchHigh,
 	NIEDLow, NIEDHigh, EPOSLow, EPOSHigh, Unknown
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum MagnitudeAccuracy {
 	NIED, PWave, PSMixed, SWave, EPOS, Level, Unknown
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum EpicenterCategory { Land, Sea, Unknown }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum WarningStatus { Forecast, Alert, Unknown }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum IntensityChange { Same, Up, Down, Unknown }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Unknown }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum WaveStatus { Unreached, Reached, Unknown }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum EEWDetail {
 	Full(FullEEW),
 	Cancel,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct AreaEEW {
 
 	pub area_name: String,
@@ -62,7 +62,7 @@ pub struct AreaEEW {
 	pub wave_status: WaveStatus,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct EEW {
 
 	pub source: Source,
@@ -77,7 +77,7 @@ pub struct EEW {
 	pub detail: EEWDetail,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct FullEEW {
 
 	pub issue_pattern: IssuePattern,

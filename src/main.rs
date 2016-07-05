@@ -116,8 +116,8 @@ fn main()
 			};
 
 			if let Some(eews) = buffer.append(&eew) {
-				se.emit(&eews, &eew);
-				te.emit(&eews, &eew);
+				se.emit(eews, &eew);
+				te.emit(eews, &eew);
 			}
 		}
 	}

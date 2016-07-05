@@ -6,6 +6,7 @@ extern crate crypto;
 extern crate rand;
 
 mod eew;
+mod eew_extension;
 mod parser;
 mod emitter;
 mod eew_buffer;
@@ -14,6 +15,7 @@ mod destination;
 mod translator;
 
 pub use self::eew::*;
+pub use self::eew_extension::*;
 pub use self::parser::*;
 pub use self::emitter::Emitter;
 pub use self::eew_buffer::EEWBuffer;

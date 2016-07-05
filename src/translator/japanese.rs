@@ -1,7 +1,7 @@
 use chrono::*;
 
 use eew::*;
-use translator::eew_extension::*;
+use eew_extension::*;
 
 
 pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime::StrftimeItems>

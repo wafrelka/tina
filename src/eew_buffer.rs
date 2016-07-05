@@ -17,6 +17,12 @@ impl EEWBuffer {
 		EEWBuffer { buffer: VecDeque::new(), max_block_count: DEFAULT_MAX_BLOCK_COUNT }
 	}
 
+	pub fn with_capacity(n: usize) -> EEWBuffer
+	{
+		assert!(n >= 1);
+		EEWBuffer { buffer: VecDeque::new(), max_block_count: n }
+	}
+
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
 		return self.buffer.iter().position(|ref b|

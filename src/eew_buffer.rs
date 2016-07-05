@@ -3,40 +3,36 @@ use std::collections::VecDeque;
 use eew::EEW;
 
 
-const MAX_BLOCK_COUNT: usize = 32;
+const DEFAULT_MAX_BLOCK_COUNT: usize = 32;
 
 pub struct EEWBuffer {
-	buffer: VecDeque<Vec<EEW>> // each element of buffer must have at least 1 EEW object
+	buffer: VecDeque<Vec<EEW>>, // each element of buffer must have at least 1 EEW object
+	max_block_count: usize
 }
 
 impl EEWBuffer {
 
 	pub fn new() -> EEWBuffer
 	{
-		EEWBuffer { buffer: VecDeque::new() }
+		EEWBuffer { buffer: VecDeque::new(), max_block_count: DEFAULT_MAX_BLOCK_COUNT }
 	}
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
-		for idx in 0..(self.buffer.len()) {
-			if self.buffer[idx][0].id == eew_id {
-				return Some(idx);
-			}
-		}
-
-		return None;
+		return self.buffer.iter().position(|ref b|
+			b.first().map(|ref e| e.id.as_str()) == Some(eew_id));
 	}
 
 	fn extend_block(&mut self, idx: usize, eew: EEW) {
 
 		let ref mut block = self.buffer[idx];
 
-		let to_add = {
-			let last_eew = block.last().expect("block must have at least 1 element");
+		let is_latest = {
+			let last_eew = block.last().expect("a block must have at least 1 element");
 			last_eew.number < eew.number
 		};
 
-		if to_add {
+		if is_latest {
 			block.push(eew);
 		}
 	}
@@ -46,7 +42,7 @@ impl EEWBuffer {
 		let block = vec! { eew };
 		self.buffer.push_back(block);
 
-		while self.buffer.len() > MAX_BLOCK_COUNT {
+		while self.buffer.len() > self.max_block_count {
 			self.buffer.pop_front();
 		}
 	}
@@ -61,7 +57,7 @@ impl EEWBuffer {
 			},
 			None => {
 				self.create_block(eew);
-				&self.buffer.back().expect("buffer must have at least 1 block")
+				&self.buffer.back().expect("a buffer must have at least 1 block")
 			}
 		}
 	}

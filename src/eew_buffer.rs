@@ -3,65 +3,71 @@ use std::collections::VecDeque;
 use eew::EEW;
 
 
-const MAX_BLOCK_COUNT: usize = 32;
+const DEFAULT_MAX_BLOCK_COUNT: usize = 32;
 
 pub struct EEWBuffer {
-	buffer: VecDeque<Vec<EEW>> // each element of buffer must have at least 1 EEW object
+	buffer: VecDeque<Vec<EEW>>, // each element of buffer must have at least 1 EEW object
+	max_block_count: usize
 }
 
 impl EEWBuffer {
 
 	pub fn new() -> EEWBuffer
 	{
-		EEWBuffer { buffer: VecDeque::new() }
+		EEWBuffer { buffer: VecDeque::new(), max_block_count: DEFAULT_MAX_BLOCK_COUNT }
+	}
+
+	pub fn with_capacity(n: usize) -> EEWBuffer
+	{
+		assert!(n >= 1);
+		EEWBuffer { buffer: VecDeque::new(), max_block_count: n }
 	}
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
-		for idx in 0..(self.buffer.len()) {
-			if self.buffer[idx][0].id == eew_id {
-				return Some(idx);
-			}
-		}
-
-		return None;
+		return self.buffer.iter().position(|ref b|
+			b.first().map(|ref e| e.id.as_str()) == Some(eew_id));
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: EEW) {
+	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {
 
 		let ref mut block = self.buffer[idx];
 
-		let to_add = {
-			let last_eew = block.last().expect("block must have at least 1 element");
+		let is_latest = {
+			let last_eew = block.last().expect("a block must have at least 1 element");
 			last_eew.number < eew.number
 		};
 
-		if to_add {
-			block.push(eew);
+		if is_latest {
+			block.push(eew.clone());
 		}
+
+		return is_latest;
 	}
 
-	fn create_block(&mut self, eew: EEW) {
+	fn create_block(&mut self, eew: &EEW) {
 
-		let block = vec! { eew };
+		let block = vec! { eew.clone() };
 		self.buffer.push_back(block);
 
-		while self.buffer.len() > MAX_BLOCK_COUNT {
+		while self.buffer.len() > self.max_block_count {
 			self.buffer.pop_front();
 		}
 	}
 
-	pub fn append(&mut self, eew: EEW) -> &[EEW]
+	pub fn append(&mut self, eew: &EEW) -> Option<&[EEW]>
 	{
 		match self.lookup(&eew.id) {
 
 			Some(idx) => {
-				self.extend_block(idx, eew);
-				&self.buffer[idx]
+				match self.extend_block(idx, eew) {
+					true => Some(&self.buffer[idx]),
+					false => None
+				}
 			},
 			None => {
 				self.create_block(eew);
-				&self.buffer.back().expect("buffer must have at least 1 block")
+				Some(&self.buffer.back().expect("a buffer must have at least 1 block"))
 			}
 		}
 	}

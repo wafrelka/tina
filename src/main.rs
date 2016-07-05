@@ -79,9 +79,8 @@ fn main()
 	let wni_client = WNIClient::new(wni_id.to_string(), wni_password.to_string());
 
 	let tc = Box::new(TwitterClient::new(tw_consumer_token, tw_consumer_secret, tw_access_token, tw_access_secret));
-	let tf = move |eews: &[EEW]| {
-		let eew = eews.last().unwrap();
-		match ja_format_eew_short(&eew) {
+	let tf = move |eews: &[EEW], latest: &EEW| {
+		match ja_format_eew_short(latest) {
 			Some(v) => Some(Box::new(v)),
 			None => None
 		}
@@ -89,9 +88,8 @@ fn main()
 	let te = Emitter::new(tc, &tf);
 
 	let sl = Box::new(StdoutLogger::new());
-	let sf = move |eews: &[EEW]| {
-		let eew = eews.last().unwrap();
-		Some(Box::new(ja_format_eew_detailed(&eew)))
+	let sf = move |eews: &[EEW], latest: &EEW| {
+		Some(Box::new(ja_format_eew_detailed(latest)))
 	};
 	let se = Emitter::new(sl, &sf);
 
@@ -117,10 +115,10 @@ fn main()
 				Ok(eew) => eew
 			};
 
-			let eews = buffer.append(eew);
-
-			se.emit(&eews);
-			te.emit(&eews);
+			if let Some(eews) = buffer.append(&eew) {
+				se.emit(&eews, &eew);
+				te.emit(&eews, &eew);
+			}
 		}
 	}
 }

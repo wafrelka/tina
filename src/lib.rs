@@ -17,7 +17,7 @@ mod translator;
 pub use self::eew::*;
 pub use self::eew_extension::*;
 pub use self::parser::*;
-pub use self::emitter::Emitter;
+pub use self::emitter::{Emitter, Emit};
 pub use self::eew_buffer::EEWBuffer;
 pub use self::source::{WNIClient};
 pub use self::destination::{TwitterClient, StdoutLogger};

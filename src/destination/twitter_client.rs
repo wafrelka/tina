@@ -10,7 +10,7 @@ use hyper::method::Method;
 use hyper::status::StatusCode;
 use hyper::header::{Headers, Authorization, ContentType};
 
-use destination::Destination;
+use destination::{OutputError, Destination};
 
 
 pub struct TwitterClient {
@@ -153,9 +153,14 @@ impl TwitterClient {
 
 impl Destination<String> for TwitterClient {
 
-	fn output(&self, data: String) -> Result<(), String>
+	fn output(&self, data: String) -> Result<(), OutputError<String>>
 	{
 		let c = data.clone();
-		return self.update_status(data).map_err(|_| c);
+		return match self.update_status(data) {
+			Err(StatusUpdateError::Duplicated) => Err(OutputError::Unrecoverable),
+			Err(StatusUpdateError::Unauthorized) => Err(OutputError::Unrecoverable),
+			Ok(_) => Ok(()),
+			_ => Err(OutputError::Retriable(c))
+		};
 	}
 }

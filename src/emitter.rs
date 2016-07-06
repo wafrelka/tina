@@ -3,7 +3,7 @@ use std::thread;
 use std::sync::mpsc::{Sender, channel};
 
 use eew::EEW;
-use destination::Destination;
+use destination::{OutputError, Destination};
 
 
 pub struct Emitter<'a, O, F>
@@ -27,13 +27,13 @@ impl<'a, O, F> Emitter<'a, O, F>
 				let received = rx.recv().expect("data receiving should not fail");
 				let mut formatted = *received;
 
-				loop {
+				'sending: loop {
 
-					if let Err(returned) = dest.output(formatted) {
-						formatted = returned;
-					} else {
-						break;
-					}
+					match dest.output(formatted) {
+						Ok(_) => break 'sending,
+						Err(OutputError::Unrecoverable) => break 'sending,
+						Err(OutputError::Retriable(returned)) => { formatted = returned; }
+					};
 				}
 			}
 		});

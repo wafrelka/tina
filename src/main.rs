@@ -27,8 +27,8 @@ fn main()
 		Ok(c) => c
 	};
 
-	let tw_func = |_: &[EEW], latest: &EEW| {
-		match ja_format_eew_short(latest, None) {
+	let tw_func = |eews: &[EEW], latest: &EEW| {
+		match ja_format_eew_short(latest, eews.iter().rev().nth(1)) {
 			Some(v) => Some(Box::new(v)),
 			None => None
 		}

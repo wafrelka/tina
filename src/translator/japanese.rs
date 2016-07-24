@@ -15,10 +15,7 @@ pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime
 
 pub fn format_eew_number(eew: &EEW) -> String
 {
-	match eew.status {
-		Status::LastWithCorrection | Status::Last => "最終報".to_string(),
-		_ => format!("第{}報", eew.number)
-	}
+	format!("第{}報", eew.number)
 }
 
 pub fn format_position(pos: (f32, f32)) -> String
@@ -68,7 +65,7 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 	match eew.get_eew_phase() {
 		None => return None,
 		Some(EEWPhase::Cancel) =>
-			return Some(format!("[取消] --- / {} {}", format_eew_number(eew), eew.id)),
+			return Some(format!("[取消] --- | {} {}", format_eew_number(eew), eew.id)),
 		Some(EEWPhase::Forecast) | Some(EEWPhase::Alert) => {}
 	};
 
@@ -77,9 +74,8 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 
 	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
 		(Some(EEWPhase::Forecast), true) => "予報",
-		(Some(EEWPhase::Forecast), false) => "予報(速報)",
-		(Some(EEWPhase::Alert), true) => "警報",
-		(Some(EEWPhase::Alert), false) => "警報(速報)",
+		(Some(EEWPhase::Forecast), false) => "速報",
+		(Some(EEWPhase::Alert), _) => "警報",
 		_ => unreachable!()
 	};
 
@@ -104,8 +100,13 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 		}
 	};
 
-	let s = format!("[{}{}] {} {}発生 / {} {}",
-		head, updown, detail_str, format_time(&eew.occurred_at), num_str, id);
+	let last_str = match eew.status {
+		Status::LastWithCorrection | Status::Last => "/最終報",
+		_ => ""
+	};
+
+	let s = format!("[{}{}{}] {} {}発生 | {} {}",
+		head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);
 
 	return Some(s);
 }

@@ -48,7 +48,7 @@ fn expect_eew_string(maximum_intensity: Option<f32>, updown: Diff) -> String
 		Diff::Down => "↓",
 		Diff::Same => ""
 	};
-	return format!("[予報{}] YYY {} M5.9 10km (N38.0/E142.0) 12:25:45発生 / 第1報 XXX",
+	return format!("[予報{}] YYY {} M5.9 10km (N38.0/E142.0) 12:25:45発生 | 第1報 XXX",
 		updown_str, i_str);
 }
 

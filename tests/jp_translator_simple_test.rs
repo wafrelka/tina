@@ -21,7 +21,7 @@ fn it_should_format_cancel_eew()
 		detail: EEWDetail::Cancel,
 	};
 
-	let expected = "[取消] --- / 第3報 ND20120108133201";
+	let expected = "[取消] --- | 第3報 ND20120108133201";
 
 	let result = ja_format_eew_short(&eew, None);
 
@@ -58,7 +58,7 @@ fn it_should_format_low_accuracy_eew()
 		})
 	};
 
-	let expected = "[予報(速報)] 宮城県沖 震度4 M5.9 10km (N38.0/E142.0) 12:28:49発生 / 第1報 ND20130804122902";
+	let expected = "[速報] 宮城県沖 震度4 M5.9 10km (N38.0/E142.0) 12:28:49発生 | 第1報 ND20130804122902";
 
 	let result = ja_format_eew_short(&eew, None);
 
@@ -95,7 +95,7 @@ fn it_should_format_high_accuracy_eew()
 		})
 	};
 
-	let expected = "[予報] 宮城県沖 震度不明 M--- ---km (S38.0/W142.0) 09:00:00発生 / 第2報 ND20130804122902";
+	let expected = "[予報] 宮城県沖 震度不明 M--- ---km (S38.0/W142.0) 09:00:00発生 | 第2報 ND20130804122902";
 
 	let result = ja_format_eew_short(&eew, None);
 
@@ -132,7 +132,7 @@ fn it_should_format_alert_eew_with_high_accuracy()
 		})
 	};
 
-	let expected = "[警報] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 / 最終報 ND20130808165608";
+	let expected = "[警報/最終報] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
 
 	let result = ja_format_eew_short(&eew, None);
 
@@ -169,7 +169,7 @@ fn it_should_format_alert_eew_with_low_accuracy()
 		})
 	};
 
-	let expected = "[警報(速報)] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 / 最終報 ND20130808165608";
+	let expected = "[警報/最終報] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
 
 	let result = ja_format_eew_short(&eew, None);
 

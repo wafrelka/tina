@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use eew::Kind;
 use eew::EEW;
 
 
@@ -34,8 +35,23 @@ impl EEWBuffer {
 		let ref mut block = self.buffer[idx];
 
 		let is_latest = {
+
 			let last_eew = block.last().expect("a block must have at least 1 element");
-			last_eew.number < eew.number
+
+			if last_eew.number != eew.number {
+
+				last_eew.number < eew.number
+
+			} else {
+
+				let is_cancel = |e: &EEW| {
+					match e.kind {
+						Kind::Cancel | Kind::DrillCancel => true,
+					_ => false
+					} };
+
+				!is_cancel(last_eew) && is_cancel(eew)
+			}
 		};
 
 		if is_latest {

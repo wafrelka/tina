@@ -25,8 +25,8 @@ impl EEWBuffer {
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
-		return self.buffer.iter().position(|ref b|
-			b.first().map(|ref e| e.id.as_str()) == Some(eew_id));
+		return self.buffer.iter().position(|ref block|
+			block.first().map(|ref eew| eew.id.as_str()) == Some(eew_id));
 	}
 
 	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {

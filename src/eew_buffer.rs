@@ -30,35 +30,32 @@ impl EEWBuffer {
 			block.first().map(|ref eew| eew.id.as_str()) == Some(eew_id));
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {
+	fn is_acceptable(&self, idx: usize, eew: &EEW) -> bool {
 
-		let ref mut block = self.buffer[idx];
+		let block = &self.buffer[idx];
+		let last_eew = block.last().expect("a block must have at least 1 element");
 
-		let is_latest = {
+		if last_eew.number != eew.number {
+			return last_eew.number < eew.number;
+		}
 
-			let last_eew = block.last().expect("a block must have at least 1 element");
-
-			if last_eew.number != eew.number {
-
-				last_eew.number < eew.number
-
-			} else {
-
-				let is_cancel = |e: &EEW| {
-					match e.kind {
-						Kind::Cancel | Kind::DrillCancel => true,
-					_ => false
-					} };
-
-				!is_cancel(last_eew) && is_cancel(eew)
+		let is_cancel = |e: &EEW| {
+			match e.kind {
+				Kind::Cancel | Kind::DrillCancel => true,
+				_ => false
 			}
 		};
 
-		if is_latest {
-			block.push(eew.clone());
-		}
+		return !is_cancel(last_eew) && is_cancel(eew);
+	}
 
-		return is_latest;
+	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {
+
+		let to_accept = self.is_acceptable(idx, eew);
+		if to_accept {
+			self.buffer[idx].push(eew.clone());
+		}
+		return to_accept;
 	}
 
 	fn create_block(&mut self, eew: &EEW) {

@@ -14,10 +14,7 @@ fn main()
 {
 	let args: Vec<String> = env::args().collect();
 
-	let conf_path = match args.len() >= 2 {
-		true => args[1].as_str(),
-		false => "tina.yaml",
-	};
+	let conf_path = args.get(1).map(|s| s.as_str()).unwrap_or("tina.yaml");
 
 	let conf = match Config::load_config(conf_path) {
 		Err(err) => {

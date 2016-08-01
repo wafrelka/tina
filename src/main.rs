@@ -28,14 +28,11 @@ fn main()
 	};
 
 	let tw_func = |eews: &[EEW], latest: &EEW| {
-		match ja_format_eew_short(latest, eews.iter().rev().nth(1)) {
-			Some(v) => Some(Box::new(v)),
-			None => None
-		}
+		ja_format_eew_short(latest, eews.iter().rev().nth(1))
 	};
 
 	let stdout_func = |_: &[EEW], latest: &EEW| {
-		Some(Box::new(format_eew_full(latest)))
+		Some(format_eew_full(latest))
 	};
 
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
@@ -43,15 +40,15 @@ fn main()
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();
-		let tc = Box::new(TwitterClient::new(
+		let tc = TwitterClient::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
-			t.access_token.clone(), t.access_secret.clone()));
+			t.access_token.clone(), t.access_secret.clone());
 		let te = Box::new(Emitter::new(tc, &tw_func));
 		dests.push(te);
 		println!("Use: Twitter");
 	}
 
-	let sl = Box::new(StdoutLogger::new());
+	let sl = StdoutLogger::new();
 	let se = Box::new(Emitter::new(sl, &stdout_func));
 	dests.push(se);
 	println!("Use: Stdout");

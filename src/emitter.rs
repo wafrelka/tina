@@ -7,7 +7,7 @@ use destination::{OutputError, Destination};
 
 
 pub struct Emitter<'a, O, F>
-	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
+	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<O> {
 	tx: Sender<Box<O>>,
 	formatter: &'a F,
 }
@@ -17,7 +17,7 @@ pub trait Emit {
 }
 
 impl<'a, O, F> Emit for Emitter<'a, O, F>
-	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
+	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<O> {
 	fn emit(&self, eews: &[EEW], latest: &EEW) -> bool
 	{
 		self.emit(eews, latest)
@@ -25,12 +25,13 @@ impl<'a, O, F> Emit for Emitter<'a, O, F>
 }
 
 impl<'a, O, F> Emitter<'a, O, F>
-	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<Box<O>> {
+	where O: 'static + Send, F: 'a + Fn(&[EEW], &EEW) -> Option<O> {
 
-	pub fn new<D>(dest: Box<D>, formatter: &'a F) -> Emitter<'a, O, F>
+	pub fn new<D>(dest: D, formatter: &'a F) -> Emitter<'a, O, F>
 		where D: 'static + Destination<O>
 	{
 		let (tx, rx) = channel::<Box<O>>();
+		let boxed_dest = Box::new(dest);
 
 		thread::spawn(move || {
 
@@ -41,7 +42,7 @@ impl<'a, O, F> Emitter<'a, O, F>
 
 				'sending: loop {
 
-					match dest.output(formatted) {
+					match boxed_dest.output(formatted) {
 						Ok(_) => break 'sending,
 						Err(OutputError::Unrecoverable) => break 'sending,
 						Err(OutputError::Retriable(returned)) => { formatted = returned; }
@@ -61,7 +62,7 @@ impl<'a, O, F> Emitter<'a, O, F>
 	pub fn emit(&self, eews: &[EEW], latest: &EEW) -> bool
 	{
 		if let Some(d) = (*self.formatter)(eews, latest) {
-			self.tx.send(d).expect("data sending should not fail");
+			self.tx.send(Box::new(d)).expect("data sending should not fail");
 			return true;
 		}
 		return false;

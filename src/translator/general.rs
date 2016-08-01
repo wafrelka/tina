@@ -15,7 +15,7 @@ pub fn format_eew_full(eew: &EEW) -> String
 
 			let global = format!("issue_pattern: {:?}, epicenter_name: {}, epicenter: {:?}, \
 				depth: {:?}, magnitude: {:?}, maximum_intensity: {:?}, epicenter_accuracy: {:?}, \
-				depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_category: {:?} \
+				depth_accuracy: {:?}, magnitude_accuracy: {:?}, epicenter_category: {:?}, \
 				warning_status: {:?}, intensity_change: {:?}, change_reason: {:?}\n",
 				detail.issue_pattern, detail.epicenter_name, detail.epicenter, detail.depth,
 				detail.magnitude, detail.maximum_intensity, detail.epicenter_accuracy,

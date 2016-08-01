@@ -9,6 +9,23 @@ use tina::*;
 
 fn make_dummy_eew(eew_id: &str, number: u32) -> EEW
 {
+	EEW { source: Source::Tokyo, kind: Kind::Normal, issued_at: UTC.timestamp(12345, 0),
+		occurred_at: UTC.timestamp(12345, 0), id: eew_id.to_string(), status: Status::Normal,
+		number: number, detail: EEWDetail::Full(FullEEW {
+			issue_pattern: IssuePattern::HighAccuracy, epicenter_name: "-".to_string(),
+			epicenter: (0.0, 0.0), depth: Some(10.0), magnitude: None, maximum_intensity: None,
+			epicenter_accuracy: EpicenterAccuracy::NIEDHigh,
+			depth_accuracy: DepthAccuracy::NIEDHigh,
+			magnitude_accuracy: MagnitudeAccuracy::NIED,
+			epicenter_category: EpicenterCategory::Land, warning_status: WarningStatus::Forecast,
+			intensity_change: IntensityChange::Same, change_reason: ChangeReason::Nothing,
+			area_info: vec!{}
+		})
+	}
+}
+
+fn make_dummy_cancel_eew(eew_id: &str, number: u32) -> EEW
+{
 	EEW { source: Source::Tokyo, kind: Kind::Cancel, issued_at: UTC.timestamp(12345, 0),
 		occurred_at: UTC.timestamp(12345, 0), id: eew_id.to_string(), status: Status::Normal,
 		number: number, detail: EEWDetail::Cancel
@@ -68,4 +85,42 @@ fn it_should_erase_old_blocks_with_fifo_manner()
 	assert!(buf.append(&eewd2) == Some(&[eewd1, eewd2]));
 	assert!(buf.append(&eewa2) == Some(&[eewa2]));
 	assert!(buf.append(&eewc2) == Some(&[eewc2]));
+}
+
+#[test]
+fn it_should_reject_same_number_eew()
+{
+	let eew1 = make_dummy_eew("A", 1);
+	let eew2a = make_dummy_eew("A", 2);
+	let eew2b = make_dummy_eew("A", 2);
+
+	let mut buf = EEWBuffer::with_capacity(4);
+
+	assert!(buf.append(&eew1) != None);
+	assert!(buf.append(&eew2a) == Some(&[eew1, eew2a]));
+	assert!(buf.append(&eew2b) == None);
+}
+
+#[test]
+fn it_should_accept_same_number_eew_with_cancel()
+{
+	let eew1 = make_dummy_eew("A", 1);
+	let eew2a = make_dummy_eew("A", 2);
+	let eew2b = make_dummy_cancel_eew("A", 2);
+	let eew2c = make_dummy_cancel_eew("A", 2);
+	let eew2d = make_dummy_eew("A", 2);
+	let eew2e = make_dummy_cancel_eew("A", 2);
+	let eew3a = make_dummy_eew("A", 3);
+	let eew3b = make_dummy_cancel_eew("A", 3);
+
+	let mut buf = EEWBuffer::with_capacity(4);
+
+	assert!(buf.append(&eew1) != None);
+	assert!(buf.append(&eew2a) != None);
+	assert!(buf.append(&eew2b) != None);
+	assert!(buf.append(&eew2c) == None);
+	assert!(buf.append(&eew2d) == None);
+	assert!(buf.append(&eew2e) == None);
+	assert!(buf.append(&eew3a) != None);
+	assert!(buf.append(&eew3b) == Some(&[eew1, eew2a, eew2b, eew3a, eew3b]));
 }

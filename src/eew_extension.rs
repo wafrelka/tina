@@ -90,4 +90,11 @@ impl EEW {
 			EEWDetail::Cancel => IntensityClass::Unknown
 		}
 	}
+
+	pub fn is_last(&self) -> bool {
+		match self.status {
+			Status::LastWithCorrection | Status::Last => true,
+			_ => false
+		}
+	}
 }

@@ -1,0 +1,13 @@
+path:
+  area: "area_code.csv"
+  epicenter: "epicenter_code.csv"
+
+wni:
+  id: "email@example.com"
+  password: "passw0rd"
+
+twitter:
+  consumer_token: "xxxxxxxxxxxxxxxxxxxxxx"
+  consumer_secret: "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+  access_token: "0000000000-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+  access_secret: "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"

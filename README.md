@@ -16,12 +16,12 @@ immediately after an earthquake is occurred
 A GUI-based EEW client software for Windows released by WNI (Weathernews Inc.)
 
 
-## Functions
+## Features
 
 - Post EEW information to Twitter
 - (TODO) Post EEW information to Slack
 - (TODO) Post EEW information to PushBullet
-- (TODO) Launch other programs in response to EEWs
+- (TODO) Launch other programs in response to EEW
 
 
 ## Miscellaneous

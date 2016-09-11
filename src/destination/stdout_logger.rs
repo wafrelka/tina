@@ -1,6 +1,3 @@
-use destination::{OutputError, Destination};
-
-
 pub struct StdoutLogger { }
 
 impl StdoutLogger {
@@ -9,13 +6,9 @@ impl StdoutLogger {
 	{
 		StdoutLogger {}
 	}
-}
 
-impl Destination<String> for StdoutLogger {
-
-	fn output(&self, data: String) -> Result<(), OutputError<String>>
+	pub fn output(&self, data: &str)
 	{
 		println!("{}", data);
-		return Ok(());
 	}
 }

@@ -5,6 +5,7 @@ extern crate tina;
 mod config;
 
 use std::env;
+use std::sync::Arc;
 
 use tina::*;
 use config::*;
@@ -24,33 +25,33 @@ fn main()
 		Ok(c) => c
 	};
 
-	let tw_func = |eews: &[EEW], latest: &EEW| {
-		ja_format_eew_short(latest, eews.iter().rev().nth(1))
+	let tw_fn = |eews: &[EEW], latest: &EEW, tw: &mut TwitterClient| {
+
+		if let Some(out) = ja_format_eew_short(latest, eews.iter().rev().nth(1)) {
+			tw.output(out);
+		}
 	};
 
-	let stdout_func = |_: &[EEW], latest: &EEW| {
-		Some(format_eew_full(latest))
+	let stdout_fn = |_: &[EEW], latest: &EEW, stdout_logger: &mut StdoutLogger| {
+
+		let out = format_eew_full(&latest);
+		stdout_logger.output(&out);
 	};
 
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
-	let mut dests: Vec<Box<Emit>> = Vec::new();
+	let mut emitters: Vec<Emitter> = Vec::new();
+
+	emitters.push(Emitter::new(stdout_fn, StdoutLogger::new()));
+	println!("Use: Stdout");
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();
 		let tc = TwitterClient::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
 			t.access_token.clone(), t.access_secret.clone());
-		let te = Box::new(Emitter::new(tc, &tw_func));
-		dests.push(te);
+		emitters.push(Emitter::new(tw_fn, tc));
 		println!("Use: Twitter");
 	}
-
-	let sl = StdoutLogger::new();
-	let se = Box::new(Emitter::new(sl, &stdout_func));
-	dests.push(se);
-	println!("Use: Stdout");
-
-	let mut buffer = EEWBuffer::new();
 
 	loop {
 
@@ -69,13 +70,11 @@ fn main()
 					println!("StreamingError: {:?}", e);
 					break;
 				},
-				Ok(eew) => eew
+				Ok(eew) => Arc::new(eew)
 			};
 
-			if let Some(eews) = buffer.append(&eew) {
-				for d in dests.iter() {
-					d.emit(&eews, &eew);
-				}
+			for e in emitters.iter() {
+				e.emit(eew.clone());
 			}
 		}
 	}

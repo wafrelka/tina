@@ -28,7 +28,7 @@ fn main()
 	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>, tw: &mut TwitterClient| {
 
 		if let Some(out) = ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
-			tw.output(&out);
+			tw.output(&out, None);
 		}
 	};
 

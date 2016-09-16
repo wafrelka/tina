@@ -1,5 +1,6 @@
 use std::io::Read;
 
+use rustc_serialize::json::Json;
 use oauthcli::SignatureMethod::HmacSha1;
 use oauthcli::OAuthAuthorizationHeaderBuilder;
 use url::Url;
@@ -48,11 +49,15 @@ impl TwitterClient {
 		return true;
 	}
 
-	pub fn update_status(&self, message: &str)
-	 -> Result<(), StatusUpdateError>
+	pub fn update_status(&self, message: &str, in_reply_to: Option<u64>)
+	 -> Result<u64, StatusUpdateError>
 	{
 		let api_url = "https://api.twitter.com/1.1/statuses/update.json";
-		let args = vec![("status", message)];
+		let prev_str_opt = in_reply_to.map(|i| i.to_string());
+		let mut args = vec![("status", message)];
+		if prev_str_opt.is_some() {
+			args.push(("in_reply_to_status_id", prev_str_opt.as_ref().unwrap()));
+		}
 		let result = self.request(Method::Post, api_url, args);
 
 		let mut res = try!(result.map_err(|_| StatusUpdateError::Network));
@@ -74,7 +79,18 @@ impl TwitterClient {
 				return Err(StatusUpdateError::Unknown);
 			},
 
-			StatusCode::Ok => return Ok(()),
+			StatusCode::Ok => {
+
+				let mut body = String::new();
+
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Unknown));
+
+				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::Unknown));
+				let id_obj = try!(json.find("id").ok_or(StatusUpdateError::Unknown));
+				let id = try!(id_obj.as_u64().ok_or(StatusUpdateError::Unknown));
+
+				return Ok(id);
+			},
 
 			StatusCode::TooManyRequests => return Err(StatusUpdateError::RateLimitExceeded),
 			StatusCode::Unauthorized => return Err(StatusUpdateError::Unauthorized),
@@ -142,13 +158,13 @@ impl TwitterClient {
 		return oauth_header.to_string();
 	}
 
-	pub fn output(&self, data: &str) -> Result<(),()>
+	pub fn output(&self, data: &str, in_reply_to: Option<u64>) -> Option<u64>
 	{
-		return match self.update_status(data) {
-			Err(StatusUpdateError::Duplicated) => Err(()),
-			Err(StatusUpdateError::Unauthorized) => Err(()),
-			Ok(_) => Ok(()),
-			_ => Err(())
+		return match self.update_status(data, in_reply_to) {
+			Err(StatusUpdateError::Duplicated) => None,
+			Err(StatusUpdateError::Unauthorized) => None,
+			Ok(id) => Some(id),
+			_ => None
 		};
 	}
 }

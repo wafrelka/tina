@@ -39,9 +39,9 @@ fn main()
 	};
 
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
-	let mut emitters: Vec<Emitter> = Vec::new();
+	let mut cons: Vec<Connector> = Vec::new();
 
-	emitters.push(Emitter::new(stdout_fn, StdoutLogger::new()));
+	cons.push(Connector::new(stdout_fn, StdoutLogger::new()));
 	println!("Use: Stdout");
 
 	if conf.twitter.is_some() {
@@ -49,7 +49,7 @@ fn main()
 		let tc = TwitterClient::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
 			t.access_token.clone(), t.access_secret.clone());
-		emitters.push(Emitter::new(tw_fn, tc));
+		cons.push(Connector::new(tw_fn, tc));
 		println!("Use: Twitter");
 	}
 
@@ -73,7 +73,7 @@ fn main()
 				Ok(eew) => Arc::new(eew)
 			};
 
-			for e in emitters.iter() {
+			for e in cons.iter() {
 				e.emit(eew.clone());
 			}
 		}

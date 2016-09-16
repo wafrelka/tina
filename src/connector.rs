@@ -7,13 +7,13 @@ use eew::EEW;
 use eew_buffer::EEWBuffer;
 
 
-pub struct Emitter {
+pub struct Connector {
 	tx: Sender<Arc<EEW>>
 }
 
-impl Emitter {
+impl Connector {
 
-	pub fn new<F, A>(main_func: F, init_arg: A) -> Emitter
+	pub fn new<F, A>(main_func: F, init_arg: A) -> Connector
 		where F: Fn(&[EEW], &EEW, &mut A) + Send + 'static,
 			A: Send + 'static
 	{
@@ -32,9 +32,9 @@ impl Emitter {
 			}
 		});
 
-		let e = Emitter { tx: tx };
+		let con = Connector { tx: tx };
 
-		return e;
+		return con;
 	}
 
 	pub fn emit(&self, eew: Arc<EEW>)

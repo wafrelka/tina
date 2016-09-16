@@ -1,14 +1,16 @@
 use std::marker::Send;
 use std::thread;
-use std::sync::mpsc::{Sender, channel};
+use std::sync::mpsc::{SyncSender, sync_channel};
 use std::sync::Arc;
 
 use eew::EEW;
 use eew_buffer::EEWBuffer;
 
 
+const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;
+
 pub struct Connector {
-	tx: Sender<Arc<EEW>>
+	tx: SyncSender<Arc<EEW>>
 }
 
 impl Connector {
@@ -17,7 +19,7 @@ impl Connector {
 		where F: Fn(&[EEW], &EEW, &mut A) + Send + 'static,
 			A: Send + 'static
 	{
-		let (tx, rx) = channel::<Arc<EEW>>();
+		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
 
 		thread::spawn(move || {
 
@@ -39,6 +41,6 @@ impl Connector {
 
 	pub fn emit(&self, eew: Arc<EEW>)
 	{
-		self.tx.send(eew);
+		self.tx.try_send(eew);
 	}
 }

@@ -4,7 +4,7 @@ use eew::Kind;
 use eew::EEW;
 
 
-const DEFAULT_MAX_BLOCK_COUNT: usize = 32;
+const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
 
 pub struct EEWBuffer {
 	buffer: VecDeque<Vec<EEW>>, // each element of buffer must have at least 1 EEW object

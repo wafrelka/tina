@@ -5,6 +5,7 @@ extern crate chrono;
 extern crate crypto;
 extern crate rand;
 
+mod limited_queue;
 mod eew;
 mod eew_extension;
 mod parser;
@@ -14,6 +15,7 @@ mod source;
 mod destination;
 mod translator;
 
+pub use self::limited_queue::LimitedQueue;
 pub use self::eew::*;
 pub use self::eew_extension::*;
 pub use self::parser::*;

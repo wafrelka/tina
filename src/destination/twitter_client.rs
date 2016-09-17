@@ -10,8 +10,6 @@ use hyper::method::Method;
 use hyper::status::StatusCode;
 use hyper::header::{Headers, Authorization, ContentType};
 
-use destination::{OutputError, Destination};
-
 
 pub struct TwitterClient {
 	consumer_key: String,
@@ -149,18 +147,14 @@ impl TwitterClient {
 
 		return oauth_header;
 	}
-}
 
-impl Destination<String> for TwitterClient {
-
-	fn output(&self, data: String) -> Result<(), OutputError<String>>
+	pub fn output(&self, data: String) -> Result<(),()>
 	{
-		let c = data.clone();
 		return match self.update_status(data) {
-			Err(StatusUpdateError::Duplicated) => Err(OutputError::Unrecoverable),
-			Err(StatusUpdateError::Unauthorized) => Err(OutputError::Unrecoverable),
+			Err(StatusUpdateError::Duplicated) => Err(()),
+			Err(StatusUpdateError::Unauthorized) => Err(()),
 			Ok(_) => Ok(()),
-			_ => Err(OutputError::Retriable(c))
+			_ => Err(())
 		};
 	}
 }

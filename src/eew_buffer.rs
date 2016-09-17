@@ -1,27 +1,26 @@
-use std::collections::VecDeque;
+use limited_queue::LimitedQueue;
 
 use eew::Kind;
 use eew::EEW;
 
 
-const DEFAULT_MAX_BLOCK_COUNT: usize = 32;
+const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
 
 pub struct EEWBuffer {
-	buffer: VecDeque<Vec<EEW>>, // each element of buffer must have at least 1 EEW object
-	max_block_count: usize
+	buffer: LimitedQueue<Vec<EEW>>, // each element of buffer must have at least 1 EEW object
 }
 
 impl EEWBuffer {
 
 	pub fn new() -> EEWBuffer
 	{
-		EEWBuffer { buffer: VecDeque::new(), max_block_count: DEFAULT_MAX_BLOCK_COUNT }
+		EEWBuffer::with_allocation(DEFAULT_MAX_BLOCK_COUNT)
 	}
 
-	pub fn with_capacity(n: usize) -> EEWBuffer
+	pub fn with_allocation(limit: usize) -> EEWBuffer
 	{
-		assert!(n >= 1);
-		EEWBuffer { buffer: VecDeque::new(), max_block_count: n }
+		assert!(limit >= 1);
+		EEWBuffer { buffer: LimitedQueue::with_allocation(limit) }
 	}
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
@@ -61,11 +60,7 @@ impl EEWBuffer {
 	fn create_block(&mut self, eew: &EEW) {
 
 		let block = vec! { eew.clone() };
-		self.buffer.push_back(block);
-
-		while self.buffer.len() > self.max_block_count {
-			self.buffer.pop_front();
-		}
+		self.buffer.push(block);
 	}
 
 	pub fn append(&mut self, eew: &EEW) -> Option<&[EEW]>

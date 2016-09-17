@@ -40,7 +40,7 @@ fn it_should_hold_related_eews_within_the_same_block()
 	let eew3 = make_dummy_eew("A", 3);
 	let eew4 = make_dummy_eew("B", 1);
 
-	let mut buf = EEWBuffer::with_capacity(4);
+	let mut buf = EEWBuffer::with_allocation(4);
 
 	assert!(buf.append(&eew1) != None);
 	assert!(buf.append(&eew2) != None);
@@ -56,7 +56,7 @@ fn it_should_not_save_old_eew()
 	let eew3 = make_dummy_eew("A", 3);
 	let eew4 = make_dummy_eew("A", 4);
 
-	let mut buf = EEWBuffer::with_capacity(4);
+	let mut buf = EEWBuffer::with_allocation(4);
 
 	assert!(buf.append(&eew1) != None);
 	assert!(buf.append(&eew4) == Some(&[eew1, eew4]));
@@ -75,7 +75,7 @@ fn it_should_erase_old_blocks_with_fifo_manner()
 	let eewd1 = make_dummy_eew("D", 1);
 	let eewd2 = make_dummy_eew("D", 2);
 
-	let mut buf = EEWBuffer::with_capacity(2);
+	let mut buf = EEWBuffer::with_allocation(2);
 
 	assert!(buf.append(&eewa1) != None);
 	assert!(buf.append(&eewb) != None);
@@ -94,7 +94,7 @@ fn it_should_reject_same_number_eew()
 	let eew2a = make_dummy_eew("A", 2);
 	let eew2b = make_dummy_eew("A", 2);
 
-	let mut buf = EEWBuffer::with_capacity(4);
+	let mut buf = EEWBuffer::with_allocation(4);
 
 	assert!(buf.append(&eew1) != None);
 	assert!(buf.append(&eew2a) == Some(&[eew1, eew2a]));
@@ -113,7 +113,7 @@ fn it_should_accept_same_number_eew_with_cancel()
 	let eew3a = make_dummy_eew("A", 3);
 	let eew3b = make_dummy_cancel_eew("A", 3);
 
-	let mut buf = EEWBuffer::with_capacity(4);
+	let mut buf = EEWBuffer::with_allocation(4);
 
 	assert!(buf.append(&eew1) != None);
 	assert!(buf.append(&eew2a) != None);

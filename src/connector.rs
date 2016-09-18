@@ -16,7 +16,7 @@ pub struct Connector {
 impl Connector {
 
 	pub fn new<F, A>(main_func: F, init_arg: A) -> Connector
-		where F: Fn(&[EEW], &EEW, &mut A) + Send + 'static,
+		where F: Fn(&[Arc<EEW>], Arc<EEW>, &mut A) + Send + 'static,
 			A: Send + 'static
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
@@ -28,8 +28,8 @@ impl Connector {
 
 			loop {
 				let latest = rx.recv().unwrap();
-				if let Some(ref eews) = buffer.append(&latest) {
-					main_func(&eews, &latest, &mut a);
+				if let Some(eews) = buffer.append(latest.clone()) {
+					main_func(eews, latest, &mut a);
 				}
 			}
 		});

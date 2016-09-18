@@ -1,5 +1,6 @@
-use limited_queue::LimitedQueue;
+use std::sync::Arc;
 
+use limited_queue::LimitedQueue;
 use eew::Kind;
 use eew::EEW;
 
@@ -7,7 +8,7 @@ use eew::EEW;
 const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
 
 pub struct EEWBuffer {
-	buffer: LimitedQueue<Vec<EEW>>, // each element of buffer must have at least 1 EEW object
+	buffer: LimitedQueue<Vec<Arc<EEW>>>, // each element of buffer must have at least 1 EEW object
 }
 
 impl EEWBuffer {
@@ -25,8 +26,8 @@ impl EEWBuffer {
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
-		return self.buffer.iter().position(|ref block|
-			block.first().map(|ref eew| eew.id.as_str()) == Some(eew_id));
+		return self.buffer.iter().position(|block|
+			block.first().map(|eew| eew.id.as_str()) == Some(eew_id));
 	}
 
 	fn is_acceptable(&self, idx: usize, eew: &EEW) -> bool {
@@ -48,22 +49,22 @@ impl EEWBuffer {
 		return !is_cancel(last_eew) && is_cancel(eew);
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: &EEW) -> bool {
+	fn extend_block(&mut self, idx: usize, eew: Arc<EEW>) -> bool {
 
-		let to_accept = self.is_acceptable(idx, eew);
+		let to_accept = self.is_acceptable(idx, &eew);
 		if to_accept {
-			self.buffer[idx].push(eew.clone());
+			self.buffer[idx].push(eew);
 		}
 		return to_accept;
 	}
 
-	fn create_block(&mut self, eew: &EEW) {
+	fn create_block(&mut self, eew: Arc<EEW>) {
 
 		let block = vec! { eew.clone() };
 		self.buffer.push(block);
 	}
 
-	pub fn append(&mut self, eew: &EEW) -> Option<&[EEW]>
+	pub fn append(&mut self, eew: Arc<EEW>) -> Option<&[Arc<EEW>]>
 	{
 		match self.lookup(&eew.id) {
 

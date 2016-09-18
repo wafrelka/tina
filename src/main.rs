@@ -25,14 +25,14 @@ fn main()
 		Ok(c) => c
 	};
 
-	let tw_fn = |eews: &[EEW], latest: &EEW, tw: &mut TwitterClient| {
+	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>, tw: &mut TwitterClient| {
 
-		if let Some(out) = ja_format_eew_short(latest, eews.iter().rev().nth(1)) {
+		if let Some(out) = ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
 			tw.output(out);
 		}
 	};
 
-	let stdout_fn = |_: &[EEW], latest: &EEW, stdout_logger: &mut StdoutLogger| {
+	let stdout_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, stdout_logger: &mut StdoutLogger| {
 
 		let out = format_eew_full(&latest);
 		stdout_logger.output(&out);

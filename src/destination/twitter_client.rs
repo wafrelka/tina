@@ -24,10 +24,11 @@ pub struct TwitterClient {
 pub enum StatusUpdateError {
 	Duplicated,
 	RateLimitExceeded,
-	Invalid,
+	InvalidTweet,
+	InvalidResponse,
 	Network,
 	Unauthorized,
-	Unknown
+	Unknown(String)
 }
 
 impl TwitterClient {
@@ -68,33 +69,33 @@ impl TwitterClient {
 
 				let mut body = String::new();
 
-				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Unknown));
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
 				if body.contains("140") {
-					return Err(StatusUpdateError::Invalid);
+					return Err(StatusUpdateError::InvalidTweet);
 				} else if body.contains("duplicate") {
 					return Err(StatusUpdateError::Duplicated);
 				}
 
-				return Err(StatusUpdateError::Unknown);
+				return Err(StatusUpdateError::Unknown(body));
 			},
 
 			StatusCode::Ok => {
 
 				let mut body = String::new();
 
-				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Unknown));
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
-				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::Unknown));
-				let id_obj = try!(json.find("id").ok_or(StatusUpdateError::Unknown));
-				let id = try!(id_obj.as_u64().ok_or(StatusUpdateError::Unknown));
+				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::InvalidResponse));
+				let id_obj = try!(json.find("id").ok_or(StatusUpdateError::InvalidResponse));
+				let id = try!(id_obj.as_u64().ok_or(StatusUpdateError::InvalidResponse));
 
 				return Ok(id);
 			},
 
 			StatusCode::TooManyRequests => return Err(StatusUpdateError::RateLimitExceeded),
 			StatusCode::Unauthorized => return Err(StatusUpdateError::Unauthorized),
-			_ => return Err(StatusUpdateError::Unknown)
+			_ => return Err(StatusUpdateError::Unknown(format!("Unknown status: {}", res.status)))
 		};
 	}
 

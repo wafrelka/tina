@@ -36,12 +36,19 @@ fn main()
 
 		let prev_tw_id_opt = q.iter().find(|x| x.0 == latest.id).map(|x| x.1);
 
-		if let Some(tw_id) = tw.output(&out, prev_tw_id_opt) {
+		match tw.update_status(&out, prev_tw_id_opt) {
 
-			if prev_tw_id_opt == None {
-				q.push((latest.id.clone(), tw_id));
-			} else {
-				q.iter_mut().find(|x| x.0 == latest.id).unwrap().1 = tw_id;
+			Ok(tw_id) => {
+
+				if prev_tw_id_opt == None {
+					q.push((latest.id.clone(), tw_id));
+				} else {
+					q.iter_mut().find(|x| x.0 == latest.id).unwrap().1 = tw_id;
+				}
+			},
+
+			Err(e) => {
+				println!("TwitterError: {:?}", e);
 			}
 		}
 	};

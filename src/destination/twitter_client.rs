@@ -157,14 +157,4 @@ impl TwitterClient {
 
 		return oauth_header.to_string();
 	}
-
-	pub fn output(&self, data: &str, in_reply_to: Option<u64>) -> Option<u64>
-	{
-		return match self.update_status(data, in_reply_to) {
-			Err(StatusUpdateError::Duplicated) => None,
-			Err(StatusUpdateError::Unauthorized) => None,
-			Ok(id) => Some(id),
-			_ => None
-		};
-	}
 }

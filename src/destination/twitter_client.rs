@@ -20,7 +20,7 @@ pub struct TwitterClient {
 	client: Client
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StatusUpdateError {
 	Duplicated,
 	RateLimitExceeded,

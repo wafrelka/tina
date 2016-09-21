@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use oauthcli::SignatureMethod::HmacSha1;
-use oauthcli::{timestamp, nonce, authorization_header};
+use oauthcli::OAuthAuthorizationHeaderBuilder;
 use url::Url;
 use url::form_urlencoded::Serializer;
 use hyper::{Client, Error};
@@ -48,11 +48,11 @@ impl TwitterClient {
 		return true;
 	}
 
-	pub fn update_status(&self, message: String)
+	pub fn update_status(&self, message: &str)
 	 -> Result<(), StatusUpdateError>
 	{
 		let api_url = "https://api.twitter.com/1.1/statuses/update.json";
-		let args = vec![("status".to_string(), message)];
+		let args = vec![("status", message)];
 		let result = self.request(Method::Post, api_url, args);
 
 		let mut res = try!(result.map_err(|_| StatusUpdateError::Network));
@@ -82,7 +82,7 @@ impl TwitterClient {
 		};
 	}
 
-	fn request(&self, method: Method, api_url: &str, args: Vec<(String, String)>)
+	fn request(&self, method: Method, api_url: &str, args: Vec<(&str, &str)>)
 	 -> Result<Response, Error>
 	{
 		match method {
@@ -126,29 +126,23 @@ impl TwitterClient {
 		}
 	}
 
-	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(String, String)>)
+	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(&str, &str)>)
 	 -> String
 	{
-		let oauth_header = authorization_header(
+		let oauth_header = OAuthAuthorizationHeaderBuilder::new(
 			method,
-			Url::parse(api_url).unwrap(),
-			None,
-			&self.consumer_key,
-			&self.consumer_secret,
-			Some(&self.access_key),
-			Some(&self.access_secret),
-			HmacSha1,
-			&timestamp(),
-			&nonce(),
-			None,
-			None,
-			args.into_iter()
-		);
+			&Url::parse(api_url).unwrap(),
+			self.consumer_key.as_ref(),
+			self.consumer_secret.as_ref(),
+			HmacSha1)
+			.token(self.access_key.as_ref(), self.access_secret.as_ref())
+			.request_parameters(args.into_iter())
+			.finish_for_twitter();
 
-		return oauth_header;
+		return oauth_header.to_string();
 	}
 
-	pub fn output(&self, data: String) -> Result<(),()>
+	pub fn output(&self, data: &str) -> Result<(),()>
 	{
 		return match self.update_status(data) {
 			Err(StatusUpdateError::Duplicated) => Err(()),

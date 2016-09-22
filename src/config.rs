@@ -21,6 +21,7 @@ pub struct TwitterConfig {
 	pub consumer_secret: String,
 	pub access_token: String,
 	pub access_secret: String,
+	pub in_reply_to_enabled: bool,
 }
 
 pub struct Config {
@@ -96,6 +97,7 @@ impl Config {
 		let twitter_consumer_secret = fetch_str(&["twitter", "consumer_secret"], conf);
 		let twitter_access_token = fetch_str(&["twitter", "access_token"], conf);
 		let twitter_access_secret = fetch_str(&["twitter", "access_secret"], conf);
+		let in_reply_to_enabled = conf["twitter"]["in_reply_to_enabled"].as_bool().unwrap_or(false);
 
 		let tw_full = {
 			let v = [twitter_consumer_token, twitter_consumer_secret,
@@ -109,6 +111,7 @@ impl Config {
 				consumer_secret: twitter_consumer_secret.unwrap().to_string(),
 				access_token: twitter_access_token.unwrap().to_string(),
 				access_secret: twitter_access_secret.unwrap().to_string(),
+				in_reply_to_enabled: in_reply_to_enabled,
 			}),
 			false => None
 		};

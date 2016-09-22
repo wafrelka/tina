@@ -1,9 +1,11 @@
 use std::io::Read;
 
+use rustc_serialize::json::Json;
 use oauthcli::SignatureMethod::HmacSha1;
 use oauthcli::OAuthAuthorizationHeaderBuilder;
 use url::Url;
 use url::form_urlencoded::Serializer;
+use hyper::Url as HyperUrl;
 use hyper::{Client, Error};
 use hyper::client::Response;
 use hyper::method::Method;
@@ -19,14 +21,15 @@ pub struct TwitterClient {
 	client: Client
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StatusUpdateError {
 	Duplicated,
 	RateLimitExceeded,
-	Invalid,
+	InvalidTweet,
+	InvalidResponse,
 	Network,
 	Unauthorized,
-	Unknown
+	Unknown(String)
 }
 
 impl TwitterClient {
@@ -48,11 +51,15 @@ impl TwitterClient {
 		return true;
 	}
 
-	pub fn update_status(&self, message: &str)
-	 -> Result<(), StatusUpdateError>
+	pub fn update_status(&self, message: &str, in_reply_to: Option<u64>)
+	 -> Result<u64, StatusUpdateError>
 	{
 		let api_url = "https://api.twitter.com/1.1/statuses/update.json";
-		let args = vec![("status", message)];
+		let prev_str_opt = in_reply_to.map(|i| i.to_string());
+		let mut args = vec![("status", message)];
+		if prev_str_opt.is_some() {
+			args.push(("in_reply_to_status_id", prev_str_opt.as_ref().unwrap()));
+		}
 		let result = self.request(Method::Post, api_url, args);
 
 		let mut res = try!(result.map_err(|_| StatusUpdateError::Network));
@@ -63,67 +70,73 @@ impl TwitterClient {
 
 				let mut body = String::new();
 
-				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Unknown));
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
 				if body.contains("140") {
-					return Err(StatusUpdateError::Invalid);
+					return Err(StatusUpdateError::InvalidTweet);
 				} else if body.contains("duplicate") {
 					return Err(StatusUpdateError::Duplicated);
 				}
 
-				return Err(StatusUpdateError::Unknown);
+				return Err(StatusUpdateError::Unknown(body));
 			},
 
-			StatusCode::Ok => return Ok(()),
+			StatusCode::Ok => {
+
+				let mut body = String::new();
+
+				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
+
+				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::InvalidResponse));
+				let id_obj = try!(json.find("id").ok_or(StatusUpdateError::InvalidResponse));
+				let id = try!(id_obj.as_u64().ok_or(StatusUpdateError::InvalidResponse));
+
+				return Ok(id);
+			},
 
 			StatusCode::TooManyRequests => return Err(StatusUpdateError::RateLimitExceeded),
 			StatusCode::Unauthorized => return Err(StatusUpdateError::Unauthorized),
-			_ => return Err(StatusUpdateError::Unknown)
+			_ => return Err(StatusUpdateError::Unknown(format!("Unknown status: {}", res.status)))
 		};
 	}
 
 	fn request(&self, method: Method, api_url: &str, args: Vec<(&str, &str)>)
 	 -> Result<Response, Error>
 	{
-		match method {
+		let mut body = String::new();
+		let mut headers = Headers::new();
+		let mut url_obj = HyperUrl::parse(api_url).unwrap();
 
-			Method::Get => {
+		if method == Method::Post || method == Method::Get {
 
-				let mut headers = Headers::new();
-				let oauth_header = self.construct_oauth_header("GET", api_url, args);
-				headers.set(Authorization(oauth_header));
+			let mut args_serializer = Serializer::new(String::new());
+			for &(ref k, ref v) in args.iter() {
+				args_serializer.append_pair(k, v);
+			}
+			let args_serialized = args_serializer.finish();
 
-				let result = self.client.get(api_url).headers(headers).send();
-
-				return result;
-
-			},
-
-			Method::Post => {
-
+			if method == Method::Post {
+				body.push_str(&args_serialized);
 				let content_type = ContentType("application/x-www-form-urlencoded".parse().unwrap());
-
-				let mut args_serializer = Serializer::new(String::new());
-				for &(ref k, ref v) in &args {
-					args_serializer.append_pair(k, v);
-				}
-				let args_serialized = args_serializer.finish();
-
-				let mut headers = Headers::new();
-				let oauth_header = self.construct_oauth_header("POST", api_url, args);
-				headers.set(Authorization(oauth_header));
 				headers.set(content_type);
-
-				let result = self.client.post(api_url).body(&args_serialized).headers(headers).send();
-
-				return result;
-
-			},
-
-			_ => {
-				panic!();
+			} else {
+				url_obj.set_query(Some(&args_serialized));
 			}
 		}
+
+		let oauth_header = self.construct_oauth_header(method.as_ref(), api_url, args);
+		headers.set(Authorization(oauth_header));
+
+		let m = method.clone();
+		let h = headers.clone();
+		let u = url_obj.clone();
+		if let Ok(r) = self.client.request(m, u).headers(h).body(&body).send() {
+			return Ok(r);
+		}
+
+		// retry (because the first attempt may fail due to reuse of closed sockets)
+		// detail: https://github.com/hyperium/hyper/issues/796
+		return self.client.request(method, url_obj).headers(headers).body(&body).send();
 	}
 
 	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(&str, &str)>)
@@ -140,15 +153,5 @@ impl TwitterClient {
 			.finish_for_twitter();
 
 		return oauth_header.to_string();
-	}
-
-	pub fn output(&self, data: &str) -> Result<(),()>
-	{
-		return match self.update_status(data) {
-			Err(StatusUpdateError::Duplicated) => Err(()),
-			Err(StatusUpdateError::Unauthorized) => Err(()),
-			Ok(_) => Ok(()),
-			_ => Err(())
-		};
 	}
 }

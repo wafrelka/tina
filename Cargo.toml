@@ -6,6 +6,7 @@ authors = ["wafrelka <wafrelka@gmail.com>"]
 [dependencies]
 oauthcli = "1.0"
 url = "1.2"
+rustc-serialize = "0.3"
 yaml-rust = "0.3"
 hyper = "0.9"
 chrono = "0.2"

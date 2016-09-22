@@ -1,5 +1,5 @@
 use std::ops::{Index, IndexMut};
-use std::collections::vec_deque::Iter;
+use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 
 
@@ -31,6 +31,7 @@ impl<T> LimitedQueue<T> {
 	}
 
 	pub fn iter(&self) -> Iter<T> { self.q.iter() }
+	pub fn iter_mut(&mut self) -> IterMut<T> { self.q.iter_mut() }
 	pub fn front(&self) -> Option<&T> { self.q.front() }
 	pub fn back(&self) -> Option<&T> { self.q.back() }
 }

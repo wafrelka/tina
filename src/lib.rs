@@ -1,5 +1,6 @@
 extern crate oauthcli;
 extern crate url;
+extern crate rustc_serialize;
 #[macro_use] extern crate hyper;
 extern crate chrono;
 extern crate crypto;

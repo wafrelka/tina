@@ -25,16 +25,20 @@ fn main()
 		Ok(c) => c
 	};
 
-	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>, state: &mut (TwitterClient, LimitedQueue<(String, u64)>)| {
+	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>,
+		state: &mut (TwitterClient, LimitedQueue<(String, u64)>, bool)| {
 
-		let (ref tw, ref mut q) = *state;
+		let (ref tw, ref mut q, reply_enabled) = *state;
 
 		let out = match ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
 			Some(out) => out,
 			None => return
 		};
 
-		let prev_tw_id_opt = q.iter().find(|x| x.0 == latest.id).map(|x| x.1);
+		let prev_tw_id_opt = match reply_enabled {
+			true => q.iter().find(|x| x.0 == latest.id).map(|x| x.1),
+			false => None
+		};
 
 		match tw.update_status(&out, prev_tw_id_opt) {
 
@@ -71,7 +75,7 @@ fn main()
 			t.consumer_token.clone(), t.consumer_secret.clone(),
 			t.access_token.clone(), t.access_secret.clone());
 		let q = LimitedQueue::with_allocation(16);
-		cons.push(Connector::new(tw_fn, (tc, q)));
+		cons.push(Connector::new(tw_fn, (tc, q, t.in_reply_to_enabled)));
 		println!("Use: Twitter");
 	}
 

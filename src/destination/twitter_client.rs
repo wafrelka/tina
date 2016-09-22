@@ -5,6 +5,7 @@ use oauthcli::SignatureMethod::HmacSha1;
 use oauthcli::OAuthAuthorizationHeaderBuilder;
 use url::Url;
 use url::form_urlencoded::Serializer;
+use hyper::Url as HyperUrl;
 use hyper::{Client, Error};
 use hyper::client::Response;
 use hyper::method::Method;
@@ -102,45 +103,40 @@ impl TwitterClient {
 	fn request(&self, method: Method, api_url: &str, args: Vec<(&str, &str)>)
 	 -> Result<Response, Error>
 	{
-		match method {
+		let mut body = String::new();
+		let mut headers = Headers::new();
+		let mut url_obj = HyperUrl::parse(api_url).unwrap();
 
-			Method::Get => {
+		if method == Method::Post || method == Method::Get {
 
-				let mut headers = Headers::new();
-				let oauth_header = self.construct_oauth_header("GET", api_url, args);
-				headers.set(Authorization(oauth_header));
+			let mut args_serializer = Serializer::new(String::new());
+			for &(ref k, ref v) in args.iter() {
+				args_serializer.append_pair(k, v);
+			}
+			let args_serialized = args_serializer.finish();
 
-				let result = self.client.get(api_url).headers(headers).send();
-
-				return result;
-
-			},
-
-			Method::Post => {
-
+			if method == Method::Post {
+				body.push_str(&args_serialized);
 				let content_type = ContentType("application/x-www-form-urlencoded".parse().unwrap());
-
-				let mut args_serializer = Serializer::new(String::new());
-				for &(ref k, ref v) in &args {
-					args_serializer.append_pair(k, v);
-				}
-				let args_serialized = args_serializer.finish();
-
-				let mut headers = Headers::new();
-				let oauth_header = self.construct_oauth_header("POST", api_url, args);
-				headers.set(Authorization(oauth_header));
 				headers.set(content_type);
-
-				let result = self.client.post(api_url).body(&args_serialized).headers(headers).send();
-
-				return result;
-
-			},
-
-			_ => {
-				panic!();
+			} else {
+				url_obj.set_query(Some(&args_serialized));
 			}
 		}
+
+		let oauth_header = self.construct_oauth_header(method.as_ref(), api_url, args);
+		headers.set(Authorization(oauth_header));
+
+		let m = method.clone();
+		let h = headers.clone();
+		let u = url_obj.clone();
+		if let Ok(r) = self.client.request(m, u).headers(h).body(&body).send() {
+			return Ok(r);
+		}
+
+		// retry (because the first attempt may fail due to reuse of closed sockets)
+		// detail: https://github.com/hyperium/hyper/issues/796
+		return self.client.request(method, url_obj).headers(headers).body(&body).send();
 	}
 
 	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(&str, &str)>)

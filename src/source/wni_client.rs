@@ -21,7 +21,7 @@ const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.tx
 const LOGIN_PATH: &'static str = "/login";
 const TIMEOUT_SECS: u64 = 3 * 60;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum WNIError {
 	Authentication,
 	Network,
@@ -53,7 +53,6 @@ impl WNIClient {
 	{
 		let mut res = try!(self.client.get(SERVER_LIST_URL).send().map_err(|_| WNIError::Network));
 		let mut body = String::new();
-
 		try!(res.read_to_string(&mut body).map_err(|_| WNIError::Network));
 
 		let servers: Vec<&str> = body.split('\n').filter(|&s| s != "").collect();
@@ -77,10 +76,10 @@ impl WNIClient {
 		let res = try!(self.client.get(&url).headers(headers).send().map_err(|_| WNIError::Network));
 
 		if res.headers.get::<XWNIResult>() != Some(&XWNIResult("OK".to_owned())) {
-			return Err(WNIError::Authentication);
+			Err(WNIError::Authentication)
+		} else {
+			Ok(WNIConnection::new(res))
 		}
-
-		return Ok(WNIConnection::new(res));
 	}
 }
 
@@ -102,8 +101,7 @@ impl WNIConnection {
 	{
 		let mut buffer = vec! {};
 
-		let size = try!(self.reader.read_until(b'\x03', &mut buffer)
-			.map_err(|_| WNIError::Network));
+		let size = try!(self.reader.read_until(b'\x03', &mut buffer).map_err(|_| WNIError::Network));
 
 		if size == 0 {
 			return Err(WNIError::ConnectionClosed);
@@ -111,8 +109,7 @@ impl WNIConnection {
 
 		println!("Received: {}", String::from_utf8_lossy(&buffer));
 
-		let left = try!(buffer.iter().rposition(|&x| x == b'\x02')
-			.ok_or(WNIError::InvalidData)) + 2;
+		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;
 		let right = buffer.len() - 2;
 
 		if left >= right {

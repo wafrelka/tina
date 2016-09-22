@@ -8,7 +8,7 @@ use std::io::Read;
 use yaml_rust::YamlLoader;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConfigLoadError {
 	Io,
 	InvalidCodeFormat,
@@ -40,8 +40,7 @@ fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadErro
 
 	for record in reader.decode() {
 
-		let (code, name): (String, String) =
-			try!(record.map_err(|_| ConfigLoadError::InvalidCodeFormat));
+		let (code, name): (String, String) = try!(record.map_err(|_| ConfigLoadError::InvalidCodeFormat));
 
 		let mut encoded = [0; 3];
 		let bytes = code.as_bytes();
@@ -50,23 +49,11 @@ fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadErro
 			return Err(ConfigLoadError::InvalidCodeFormat);
 		}
 
-		for i in 0..(encoded.len()) {
-			encoded[i] = bytes[i];
-		}
-
+		encoded.copy_from_slice(bytes);
 		dict.insert(encoded, name);
 	}
 
 	return Ok(dict);
-}
-
-fn fetch_str<'a>(keys: &[&str], conf: &'a yaml_rust::Yaml) -> Option<&'a str>
-{
-	let mut elem = conf;
-	for &k in keys {
-		elem = &elem[k];
-	}
-	elem.as_str()
 }
 
 impl Config {
@@ -80,24 +67,24 @@ impl Config {
 		let docs = try!(YamlLoader::load_from_str(&data).map_err(|_| ConfigLoadError::Io));
 		let conf = try!(docs.first().ok_or(ConfigLoadError::InvalidConfigFormat));
 
-		let wni_id =
-			try!(fetch_str(&["wni", "id"], conf).ok_or(ConfigLoadError::MissingRequiredKey));
-		let wni_password =
-			try!(fetch_str(&["wni", "password"], conf).ok_or(ConfigLoadError::MissingRequiredKey));
+		let wni_conf = &conf["wni"];
+		let wni_id = try!(wni_conf["id"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
+		let wni_password = try!(wni_conf["password"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
 
-		let area_dict_path =
-			try!(fetch_str(&["path", "area"], conf).ok_or(ConfigLoadError::MissingRequiredKey));
+		let path_conf = &conf["path"];
+		let area_dict_path = try!(path_conf["area"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
 		let epicenter_dict_path =
-			try!(fetch_str(&["path", "epicenter"], conf).ok_or(ConfigLoadError::MissingRequiredKey));
+			try!(path_conf["epicenter"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
 
 		let area_dict = try!(load_code_dict(area_dict_path));
 		let epicenter_dict = try!(load_code_dict(epicenter_dict_path));
 
-		let twitter_consumer_token = fetch_str(&["twitter", "consumer_token"], conf);
-		let twitter_consumer_secret = fetch_str(&["twitter", "consumer_secret"], conf);
-		let twitter_access_token = fetch_str(&["twitter", "access_token"], conf);
-		let twitter_access_secret = fetch_str(&["twitter", "access_secret"], conf);
-		let in_reply_to_enabled = conf["twitter"]["in_reply_to_enabled"].as_bool().unwrap_or(false);
+		let tw_conf = &conf["twitter"];
+		let twitter_consumer_token = tw_conf["consumer_token"].as_str();
+		let twitter_consumer_secret = tw_conf["consumer_secret"].as_str();
+		let twitter_access_token = tw_conf["access_token"].as_str();
+		let twitter_access_secret = tw_conf["access_secret"].as_str();
+		let in_reply_to_enabled = tw_conf["in_reply_to_enabled"].as_bool().unwrap_or(false);
 
 		let tw_full = {
 			let v = [twitter_consumer_token, twitter_consumer_secret,
@@ -107,10 +94,10 @@ impl Config {
 
 		let tw = match tw_full {
 			true => Some(TwitterConfig {
-				consumer_token: twitter_consumer_token.unwrap().to_string(),
-				consumer_secret: twitter_consumer_secret.unwrap().to_string(),
-				access_token: twitter_access_token.unwrap().to_string(),
-				access_secret: twitter_access_secret.unwrap().to_string(),
+				consumer_token: twitter_consumer_token.expect("").to_string(),
+				consumer_secret: twitter_consumer_secret.expect("").to_string(),
+				access_token: twitter_access_token.expect("").to_string(),
+				access_secret: twitter_access_secret.expect("").to_string(),
 				in_reply_to_enabled: in_reply_to_enabled,
 			}),
 			false => None

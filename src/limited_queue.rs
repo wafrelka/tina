@@ -12,14 +12,12 @@ impl<T> LimitedQueue<T> {
 
 	pub fn new(limit: usize) -> LimitedQueue<T>
 	{
-		let q = VecDeque::new();
-		LimitedQueue { q: q, limit: limit }
+		LimitedQueue { q: VecDeque::new(), limit: limit }
 	}
 
 	pub fn with_allocation(limit: usize) -> LimitedQueue<T>
 	{
-		let q = VecDeque::with_capacity(limit);
-		LimitedQueue { q: q, limit: limit }
+		LimitedQueue { q: VecDeque::with_capacity(limit), limit: limit }
 	}
 
 	pub fn push(&mut self, item: T)

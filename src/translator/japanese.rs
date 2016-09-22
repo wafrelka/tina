@@ -10,7 +10,7 @@ pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime
 {
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const TIME_FORMAT: &'static str = "%H:%M:%S";
-	return dt.with_timezone(&jst).format(TIME_FORMAT);
+	dt.with_timezone(&jst).format(TIME_FORMAT)
 }
 
 pub fn format_eew_number(eew: &EEW) -> String
@@ -22,7 +22,7 @@ pub fn format_position(pos: (f32, f32)) -> String
 {
 	let lat_h = if pos.0 >= 0.0 { "N" } else { "S" };
 	let lon_h = if pos.1 >= 0.0 { "E" } else { "W" };
-	return format!("{}{:.1}/{}{:.1}", lat_h, pos.0.abs(), lon_h, pos.1.abs());
+	format!("{}{:.1}/{}{:.1}", lat_h, pos.0.abs(), lon_h, pos.1.abs())
 }
 
 pub fn format_magnitude(m: Option<f32>) -> String
@@ -69,7 +69,7 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 		Some(EEWPhase::Forecast) | Some(EEWPhase::Alert) => {}
 	};
 
-	let ref id = eew.id;
+	let id = &eew.id;
 	let num_str = format_eew_number(eew);
 
 	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
@@ -101,7 +101,7 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 	};
 
 	let last_str = if eew.is_last() { "/最終報" } else { "" };
-	
+
 	let s = format!("[{}{}{}] {} {}発生 | {} {}",
 		head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);
 

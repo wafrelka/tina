@@ -33,5 +33,5 @@ pub fn format_eew_full(eew: &EEW) -> String
 		}
 	};
 
-	return head + &base + &extended;
+	head + &base + &extended
 }

@@ -6,7 +6,7 @@ use chrono::*;
 use eew::*;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum JMAFormatParseError {
 	TooShort,
 	Split,
@@ -40,11 +40,11 @@ fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<UTC>>
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const DATETIME_FORMAT: &'static str = "%y%m%d%H%M%S";
 
-	return str::from_utf8(&datetime_text).ok().and_then( |converted|
-		jst.datetime_from_str(&converted, DATETIME_FORMAT).ok().map( |dt|
+	str::from_utf8(&datetime_text).ok().and_then( |converted|
+		jst.datetime_from_str(converted, DATETIME_FORMAT).ok().map( |dt|
 			dt.with_timezone(&UTC)
 		)
-	);
+	)
 }
 
 fn parse_number(number_text: &[u8]) -> Option<u32>
@@ -79,9 +79,9 @@ fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateT
 		let base_t = base.with_timezone(&jst).time();
 		let diff = a_t - base_t;
 		if diff < Duration::seconds(0) {
-			return base.checked_add(Duration::days(1) + diff);
+			base.checked_add(Duration::days(1) + diff)
 		} else {
-			return base.checked_add(diff);
+			base.checked_add(diff)
 		}
 	};
 
@@ -116,25 +116,16 @@ pub fn parse_jma_format(text: &[u8],
 		_ => return Err(JMAFormatParseError::InvalidKind)
 	};
 
-	let issued_at = match parse_datetime(&text[9..21]) {
-		Some(dt) => dt,
-		None => return Err(JMAFormatParseError::InvalidIssueTime)
-	};
+	let issued_at = try!(parse_datetime(&text[9..21]).ok_or(JMAFormatParseError::InvalidIssueTime));
 
 	// TODO: accept split telegrams
 	if text[24] != b'1' {
 		return Err(JMAFormatParseError::Split);
 	}
 
-	let occurred_at = match parse_datetime(&text[26..38]) {
-		Some(dt) => dt,
-		None => return Err(JMAFormatParseError::InvalidOoccurrenceTime)
-	};
+	let occurred_at = try!(parse_datetime(&text[26..38]).ok_or(JMAFormatParseError::InvalidOoccurrenceTime));
 
-	let id = match str::from_utf8(&text[39..55]) {
-		Ok(s) => s,
-		Err(_) => return Err(JMAFormatParseError::InvalidId)
-	};
+	let id = try!(str::from_utf8(&text[39..55]).map_err(|_| JMAFormatParseError::InvalidId));
 
 	let status = match text[59] {
 		b'0' => Status::Normal,
@@ -147,10 +138,7 @@ pub fn parse_jma_format(text: &[u8],
 	};
 
 	// we don't accept an EEW which has no telegram number
-	let number = match parse_number(&text[60..62]) {
-		Some(n) => n,
-		None => return Err(JMAFormatParseError::InvalidNumber)
-	};
+	let number = try!(parse_number(&text[60..62]).ok_or(JMAFormatParseError::InvalidNumber));
 
 	if &text[0..2] == b"39" {
 
@@ -306,26 +294,23 @@ pub fn parse_jma_format(text: &[u8],
 
 	if &text[135..138] == b"EBI" {
 
-		let ebi_part_len = 20;
+		const EBI_PART_LEN: usize = 20;
 		let mut it = 138;
 
-		while it + ebi_part_len < text.len() {
+		while it + EBI_PART_LEN < text.len() {
 
 			if &text[(it+1)..(it+6)] == b"9999=" {
 				break;
 			}
 
-			let part = &text[it..(it+ebi_part_len)];
+			let part = &text[it..(it + EBI_PART_LEN)];
 
 			let area_name = match area_code_dict.get(&part[1..4]) {
 				Some(s) => s.clone(),
 				None => return Err(JMAFormatParseError::InvalidEBI)
 			};
 
-			let left_intensity = match parse_intensity(&part[6..8]) {
-				Some(v) => v,
-				None => return Err(JMAFormatParseError::InvalidEBI)
-			};
+			let left_intensity = try!(parse_intensity(&part[6..8]).ok_or(JMAFormatParseError::InvalidEBI));
 
 			let right_intensity = {
 				let t = &part[8..10];
@@ -379,7 +364,7 @@ pub fn parse_jma_format(text: &[u8],
 
 			area_info.push(area_eew);
 
-			it += ebi_part_len;
+			it += EBI_PART_LEN;
 		}
 
 		if it + 5 >= text.len() || &text[(it+1)..(it+6)] != b"9999=" {

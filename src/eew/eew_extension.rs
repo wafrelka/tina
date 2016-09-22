@@ -1,14 +1,14 @@
 use eew::*;
 
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub enum EEWPhase {
 	Cancel,
 	Forecast,
 	Alert
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub enum IntensityClass {
 	Unknown,
 	Zero,
@@ -70,11 +70,13 @@ impl IntensityClass {
 
 impl EEW {
 
-	pub fn get_eew_phase(&self) -> Option<EEWPhase> {
+	pub fn get_eew_phase(&self) -> Option<EEWPhase>
+	{
 		get_eew_phase(&self)
 	}
 
-	pub fn is_high_accuracy(&self) -> bool {
+	pub fn is_high_accuracy(&self) -> bool
+	{
 		match self.detail {
 			EEWDetail::Full(ref detail) => match detail.issue_pattern {
 				IssuePattern::HighAccuracy => true,
@@ -84,14 +86,16 @@ impl EEW {
 		}
 	}
 
-	pub fn get_maximum_intensity_class(&self) -> IntensityClass {
+	pub fn get_maximum_intensity_class(&self) -> IntensityClass
+	{
 		match self.detail {
 			EEWDetail::Full(ref detail) => IntensityClass::new(detail.maximum_intensity),
 			EEWDetail::Cancel => IntensityClass::Unknown
 		}
 	}
 
-	pub fn is_last(&self) -> bool {
+	pub fn is_last(&self) -> bool
+	{
 		match self.status {
 			Status::LastWithCorrection | Status::Last => true,
 			_ => false

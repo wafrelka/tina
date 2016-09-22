@@ -8,7 +8,6 @@ extern crate rand;
 
 mod limited_queue;
 mod eew;
-mod eew_extension;
 mod parser;
 mod connector;
 mod eew_buffer;
@@ -18,7 +17,6 @@ mod translator;
 
 pub use self::limited_queue::LimitedQueue;
 pub use self::eew::*;
-pub use self::eew_extension::*;
 pub use self::parser::*;
 pub use self::connector::Connector;
 pub use self::eew_buffer::EEWBuffer;

@@ -36,7 +36,7 @@ impl Connector {
 
 		let con = Connector { tx: tx };
 
-		return con;
+		con
 	}
 
 	pub fn emit(&self, eew: Arc<EEW>)

@@ -26,12 +26,11 @@ impl EEWBuffer {
 
 	fn lookup(&self, eew_id: &str) -> Option<usize>
 	{
-		return self.buffer.iter().position(|block|
-			block.first().map(|eew| eew.id.as_str()) == Some(eew_id));
+		self.buffer.iter().position(|block| block.first().map(|eew| eew.id.as_ref()) == Some(eew_id))
 	}
 
-	fn is_acceptable(&self, idx: usize, eew: &EEW) -> bool {
-
+	fn is_acceptable(&self, idx: usize, eew: &EEW) -> bool
+	{
 		let block = &self.buffer[idx];
 		let last_eew = block.last().expect("a block must have at least 1 element");
 
@@ -49,19 +48,18 @@ impl EEWBuffer {
 		return !is_cancel(last_eew) && is_cancel(eew);
 	}
 
-	fn extend_block(&mut self, idx: usize, eew: Arc<EEW>) -> bool {
-
+	fn extend_block(&mut self, idx: usize, eew: Arc<EEW>) -> bool
+	{
 		let to_accept = self.is_acceptable(idx, &eew);
 		if to_accept {
 			self.buffer[idx].push(eew);
 		}
-		return to_accept;
+		to_accept
 	}
 
-	fn create_block(&mut self, eew: Arc<EEW>) {
-
-		let block = vec! { eew.clone() };
-		self.buffer.push(block);
+	fn create_block(&mut self, eew: Arc<EEW>)
+	{
+		self.buffer.push(vec! { eew });
 	}
 
 	pub fn append(&mut self, eew: Arc<EEW>) -> Option<&[Arc<EEW>]>

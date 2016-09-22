@@ -48,7 +48,7 @@ impl TwitterClient {
 	pub fn is_valid(&self) -> bool
 	{
 		// TODO: implement token validation
-		return true;
+		true
 	}
 
 	pub fn update_status(&self, message: &str, in_reply_to: Option<u64>)
@@ -57,8 +57,8 @@ impl TwitterClient {
 		let api_url = "https://api.twitter.com/1.1/statuses/update.json";
 		let prev_str_opt = in_reply_to.map(|i| i.to_string());
 		let mut args = vec![("status", message)];
-		if prev_str_opt.is_some() {
-			args.push(("in_reply_to_status_id", prev_str_opt.as_ref().unwrap()));
+		if let Some(prev_str) = prev_str_opt.as_ref() {
+			args.push(("in_reply_to_status_id", prev_str));
 		}
 		let result = self.request(Method::Post, api_url, args);
 
@@ -69,7 +69,6 @@ impl TwitterClient {
 			StatusCode::Forbidden => {
 
 				let mut body = String::new();
-
 				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
 				if body.contains("140") {
@@ -84,7 +83,6 @@ impl TwitterClient {
 			StatusCode::Ok => {
 
 				let mut body = String::new();
-
 				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
 				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::InvalidResponse));
@@ -110,7 +108,7 @@ impl TwitterClient {
 		if method == Method::Post || method == Method::Get {
 
 			let mut args_serializer = Serializer::new(String::new());
-			for &(ref k, ref v) in args.iter() {
+			for &(k, v) in args.iter() {
 				args_serializer.append_pair(k, v);
 			}
 			let args_serialized = args_serializer.finish();
@@ -124,7 +122,7 @@ impl TwitterClient {
 			}
 		}
 
-		let oauth_header = self.construct_oauth_header(method.as_ref(), api_url, args);
+		let oauth_header = self.construct_oauth_header(&method, api_url, args);
 		headers.set(Authorization(oauth_header));
 
 		let m = method.clone();
@@ -139,19 +137,18 @@ impl TwitterClient {
 		return self.client.request(method, url_obj).headers(headers).body(&body).send();
 	}
 
-	fn construct_oauth_header(&self, method: &str, api_url: &str, args: Vec<(&str, &str)>)
+	fn construct_oauth_header(&self, method: &Method, api_url: &str, args: Vec<(&str, &str)>)
 	 -> String
 	{
-		let oauth_header = OAuthAuthorizationHeaderBuilder::new(
-			method,
-			&Url::parse(api_url).unwrap(),
+		OAuthAuthorizationHeaderBuilder::new(
+			method.as_ref(),
+			&Url::parse(api_url).expect("must be a valid url string"),
 			self.consumer_key.as_ref(),
 			self.consumer_secret.as_ref(),
 			HmacSha1)
 			.token(self.access_key.as_ref(), self.access_secret.as_ref())
 			.request_parameters(args.into_iter())
-			.finish_for_twitter();
-
-		return oauth_header.to_string();
+			.finish_for_twitter()
+			.to_string()
 	}
 }

@@ -25,6 +25,7 @@ pub struct TwitterConfig {
 }
 
 pub struct Config {
+	pub log4rs_conf_path: Option<String>,
 	pub area_dict: HashMap<[u8; 3], String>,
 	pub epicenter_dict: HashMap<[u8; 3], String>,
 	pub wni_id: String,
@@ -75,6 +76,7 @@ impl Config {
 		let area_dict_path = try!(path_conf["area"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
 		let epicenter_dict_path =
 			try!(path_conf["epicenter"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
+		let log4rs_conf_path = path_conf["log4rs"].as_str().map(|s| s.to_string());
 
 		let area_dict = try!(load_code_dict(area_dict_path));
 		let epicenter_dict = try!(load_code_dict(epicenter_dict_path));
@@ -104,6 +106,7 @@ impl Config {
 		};
 
 		let c = Config {
+			log4rs_conf_path: log4rs_conf_path,
 			wni_id: wni_id.to_string(),
 			wni_password: wni_password.to_string(),
 			twitter: tw,

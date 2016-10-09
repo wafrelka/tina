@@ -5,6 +5,7 @@ extern crate rustc_serialize;
 extern crate chrono;
 extern crate crypto;
 extern crate rand;
+#[macro_use] extern crate log;
 
 mod limited_queue;
 mod eew;

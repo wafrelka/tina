@@ -9,6 +9,6 @@ impl StdoutLogger {
 
 	pub fn output(&self, data: &str)
 	{
-		println!("{}", data);
+		info!("{}", data);
 	}
 }

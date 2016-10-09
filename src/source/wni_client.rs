@@ -107,7 +107,7 @@ impl WNIConnection {
 			return Err(WNIError::ConnectionClosed);
 		}
 
-		println!("Received: {}", String::from_utf8_lossy(&buffer));
+		debug!("Received: {}", String::from_utf8_lossy(&buffer));
 
 		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;
 		let right = buffer.len() - 2;

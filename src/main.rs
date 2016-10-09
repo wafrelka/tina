@@ -1,6 +1,8 @@
 extern crate yaml_rust;
 extern crate csv;
 extern crate tina;
+extern crate log4rs;
+#[macro_use] extern crate log;
 
 mod config;
 
@@ -24,6 +26,14 @@ fn main()
 		},
 		Ok(c) => c
 	};
+
+	if let Some(log4rs_conf_path) = conf.log4rs_conf_path {
+		if let Err(err) = log4rs::init_file(log4rs_conf_path, Default::default()) {
+			println!("Error while initializing logging config ({:?})", err);
+			return;
+		}
+		println!("Enabled: Logger");
+	}
 
 	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>,
 		state: &mut (TwitterClient, LimitedQueue<(String, u64)>, bool)| {
@@ -52,7 +62,7 @@ fn main()
 			},
 
 			Err(e) => {
-				println!("TwitterError: {:?}", e);
+				error!("TwitterError: {:?}", e);
 			}
 		}
 	};
@@ -67,7 +77,7 @@ fn main()
 	let mut cons: Vec<Connector> = Vec::new();
 
 	cons.push(Connector::new(stdout_fn, StdoutLogger::new()));
-	println!("Use: Stdout");
+	info!("Enabled: Stdout");
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();
@@ -76,7 +86,7 @@ fn main()
 			t.access_token.clone(), t.access_secret.clone());
 		let q = LimitedQueue::with_allocation(16);
 		cons.push(Connector::new(tw_fn, (tc, q, t.in_reply_to_enabled)));
-		println!("Use: Twitter");
+		info!("Enabled: Twitter");
 	}
 
 	loop {
@@ -84,7 +94,7 @@ fn main()
 		let mut connection = match wni_client.connect() {
 			Ok(v) => v,
 			Err(e) => {
-				println!("ConnectionError: {:?}", e);
+				error!("ConnectionError: {:?}", e);
 				continue;
 			}
 		};
@@ -93,7 +103,7 @@ fn main()
 
 			let eew = match connection.wait_for_telegram(&conf.epicenter_dict, &conf.area_dict) {
 				Err(e) => {
-					println!("StreamingError: {:?}", e);
+					error!("StreamingError: {:?}", e);
 					break;
 				},
 				Ok(eew) => Arc::new(eew)

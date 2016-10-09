@@ -1,0 +1,15 @@
+appenders:
+  stdout: { kind: "console" }
+  eew: { kind: "file", path: "eew.log", encoder: { pattern: "{d(%Y-%m-%d-%H:%M:%S)(utc)}/{f} {l} - {m}{n}" } }
+  wni: { kind: "file", path: "wni.log", encoder: { pattern: "{d(%Y-%m-%d-%H:%M:%S)(utc)}/{f} {l} - {m}{n}" } }
+  base: { kind: "file", path: "tina.log", encoder: { pattern: "[{d(%Y-%m-%d-%H:%M:%S)(utc)} {f}] {l} - {m}{n}"}}
+root:
+  level: "info"
+  appenders: ["stdout", "base"]
+loggers:
+  tina::destination::stdout_logger:
+    level: "info"
+    appenders: ["eew"]
+  tina::source::wni_client:
+    level: "debug"
+    appenders: ["wni"]

@@ -22,5 +22,5 @@ pub use self::parser::*;
 pub use self::connector::Connector;
 pub use self::eew_buffer::EEWBuffer;
 pub use self::source::{WNIClient};
-pub use self::destination::{TwitterClient, StdoutLogger};
+pub use self::destination::{TwitterClient, LoggingWrapper};
 pub use self::translator::{ja_format_eew_short, format_eew_full};

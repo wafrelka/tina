@@ -67,17 +67,17 @@ fn main()
 		}
 	};
 
-	let stdout_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, stdout_logger: &mut StdoutLogger| {
+	let log_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, lw: &mut LoggingWrapper| {
 
 		let out = format_eew_full(&latest);
-		stdout_logger.output(&out);
+		lw.output(&out);
 	};
 
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
 	let mut cons: Vec<Connector> = Vec::new();
 
-	cons.push(Connector::new(stdout_fn, StdoutLogger::new()));
-	info!("Enabled: Stdout");
+	cons.push(Connector::new(log_fn, LoggingWrapper::new()));
+	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();

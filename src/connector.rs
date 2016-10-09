@@ -41,6 +41,8 @@ impl Connector {
 
 	pub fn emit(&self, eew: Arc<EEW>)
 	{
-		self.tx.try_send(eew);
+		if let Err(err) = self.tx.try_send(eew) {
+			warn!("Error while sending EEW data to the destination thread ({:?})", err);
+		}
 	}
 }

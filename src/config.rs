@@ -69,8 +69,10 @@ impl Config {
 		let conf = try!(docs.first().ok_or(ConfigLoadError::InvalidConfigFormat));
 
 		let wni_conf = &conf["wni"];
-		let wni_id = try!(wni_conf["id"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
-		let wni_password = try!(wni_conf["password"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
+		let wni_id =
+			try!(wni_conf["id"].as_str().ok_or(ConfigLoadError::MissingRequiredKey)).to_string();
+		let wni_password =
+			try!(wni_conf["password"].as_str().ok_or(ConfigLoadError::MissingRequiredKey)).to_string();
 
 		let path_conf = &conf["path"];
 		let area_dict_path = try!(path_conf["area"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
@@ -107,8 +109,8 @@ impl Config {
 
 		let c = Config {
 			log4rs_conf_path: log4rs_conf_path,
-			wni_id: wni_id.to_string(),
-			wni_password: wni_password.to_string(),
+			wni_id: wni_id,
+			wni_password: wni_password,
 			twitter: tw,
 			area_dict: area_dict,
 			epicenter_dict: epicenter_dict,

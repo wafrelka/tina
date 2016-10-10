@@ -7,9 +7,11 @@ root:
   level: "info"
   appenders: ["stdout", "base"]
 loggers:
-  tina::destination::stdout_logger:
+  tina::destination::logging_wrapper:
     level: "info"
     appenders: ["eew"]
+    additive: false
   tina::source::wni_client:
     level: "debug"
     appenders: ["wni"]
+    additive: false

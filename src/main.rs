@@ -12,12 +12,18 @@ use std::sync::Arc;
 use tina::*;
 use config::*;
 
+const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
+const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
+
 
 fn main()
 {
-	let args: Vec<String> = env::args().collect();
+	let cmd_args: Vec<String> = env::args().collect();
+	let env_arg_string = env::var(ENV_VAR_NAME).ok();
 
-	let conf_path = args.get(1).map(|s| s.as_str()).unwrap_or("config/tina.yaml");
+	let cmd_arg = cmd_args.get(1).map(|s| s.as_str());
+	let env_arg = env_arg_string.as_ref().map(|s| s.as_str());
+	let conf_path = cmd_arg.or(env_arg).unwrap_or(DEFAULT_CONFIG_PATH);
 
 	let conf = match Config::load_config(conf_path) {
 		Err(err) => {

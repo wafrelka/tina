@@ -10,7 +10,8 @@ use yaml_rust::YamlLoader;
 
 #[derive(Debug, Clone)]
 pub enum ConfigLoadError {
-	Io,
+	ConfigFileIo,
+	CodeDictFileIO,
 	InvalidCodeFormat,
 	InvalidConfigFormat,
 	MissingRequiredKey,
@@ -35,7 +36,7 @@ pub struct Config {
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
 {
-	let mut reader = try!(csv::Reader::from_file(path).map_err(|_| ConfigLoadError::Io));
+	let mut reader = try!(csv::Reader::from_file(path).map_err(|_| ConfigLoadError::CodeDictFileIO));
 
 	let mut dict = HashMap::new();
 
@@ -61,11 +62,11 @@ impl Config {
 
 	pub fn load_config(path: &str) -> Result<Config, ConfigLoadError>
 	{
-		let mut file = try!(File::open(path).map_err(|_| ConfigLoadError::Io));
+		let mut file = try!(File::open(path).map_err(|_| ConfigLoadError::ConfigFileIo));
 		let mut data = String::new();
-		try!(file.read_to_string(&mut data).map_err(|_| ConfigLoadError::Io));
+		try!(file.read_to_string(&mut data).map_err(|_| ConfigLoadError::ConfigFileIo));
 
-		let docs = try!(YamlLoader::load_from_str(&data).map_err(|_| ConfigLoadError::Io));
+		let docs = try!(YamlLoader::load_from_str(&data).map_err(|_| ConfigLoadError::ConfigFileIo));
 		let conf = try!(docs.first().ok_or(ConfigLoadError::InvalidConfigFormat));
 
 		let wni_conf = &conf["wni"];

@@ -6,6 +6,9 @@ use std::fs::File;
 use std::io::Read;
 
 use yaml_rust::YamlLoader;
+use log::LogLevelFilter;
+
+use tina::LogConfig;
 
 
 #[derive(Debug, Clone)]
@@ -26,12 +29,12 @@ pub struct TwitterConfig {
 }
 
 pub struct Config {
-	pub log4rs_conf_path: Option<String>,
 	pub area_dict: HashMap<[u8; 3], String>,
 	pub epicenter_dict: HashMap<[u8; 3], String>,
 	pub wni_id: String,
 	pub wni_password: String,
 	pub twitter: Option<TwitterConfig>,
+	pub log_config: LogConfig,
 }
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
@@ -79,7 +82,6 @@ impl Config {
 		let area_dict_path = try!(path_conf["area"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
 		let epicenter_dict_path =
 			try!(path_conf["epicenter"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
-		let log4rs_conf_path = path_conf["log4rs"].as_str().map(|s| s.to_string());
 
 		let area_dict = try!(load_code_dict(area_dict_path));
 		let epicenter_dict = try!(load_code_dict(epicenter_dict_path));
@@ -108,13 +110,33 @@ impl Config {
 			false => None
 		};
 
+		let log_conf = &conf["log"];
+		let wni_log_path = log_conf["wni_log_path"].as_str().map(String::from);
+		let wni_log_console = log_conf["wni_log_console_enabled"].as_bool().unwrap_or(false);
+		let eew_log_path = log_conf["eew_log_path"].as_str().map(String::from);
+		let eew_log_console = log_conf["eew_log_console_enabled"].as_bool().unwrap_or(false);
+		let main_log_level = match log_conf["main_log_level"].as_str() {
+			Some("warning") => LogLevelFilter::Warn,
+			Some("info") => LogLevelFilter::Info,
+			Some("debug") => LogLevelFilter::Debug,
+			_ => LogLevelFilter::Warn
+		};
+
+		let lc = LogConfig {
+			wni_log_path: wni_log_path,
+			wni_log_console: wni_log_console,
+			eew_log_path: eew_log_path,
+			eew_log_console: eew_log_console,
+			main_log_level: main_log_level
+		};
+
 		let c = Config {
-			log4rs_conf_path: log4rs_conf_path,
 			wni_id: wni_id,
 			wni_password: wni_password,
 			twitter: tw,
 			area_dict: area_dict,
 			epicenter_dict: epicenter_dict,
+			log_config: lc,
 		};
 
 		return Ok(c);

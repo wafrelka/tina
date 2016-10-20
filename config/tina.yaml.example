@@ -13,3 +13,10 @@ twitter:
   access_token: "0000000000-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
   access_secret: "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
   in_reply_to_enabled: false
+
+log:
+  eew_log_path: "eew.log"
+  eew_log_console: false
+  wni_log_path: "wni.log"
+  wni_log_console: false
+  main_log_level: "info"

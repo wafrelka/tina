@@ -33,13 +33,13 @@ fn main()
 		Ok(c) => c
 	};
 
-	if let Some(log4rs_conf_path) = conf.log4rs_conf_path {
-		if let Err(err) = log4rs::init_file(log4rs_conf_path, Default::default()) {
-			println!("Error while initializing logging config ({:?})", err);
+	match setup_logging(conf.log_config) {
+		Err(_) => {
+			println!("Error while initializing log setting");
 			return;
-		}
-		println!("Enabled: Logger");
-	}
+		},
+		Ok(_) => {}
+	};
 
 	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>,
 		state: &mut (TwitterClient, LimitedQueue<(String, u64)>, bool)| {

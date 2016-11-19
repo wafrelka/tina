@@ -1,16 +1,16 @@
-# Tina - "The Last 10-Second" protocol-based EEW client written in Rust
+# Tina - "The Last 10-Second" protocol-based EEW client
 
 
 ## Description
 
 Tina is an EEW client based on "The Last 10-Second" protocol.
-The aim of this software is to make a cheap but relatively reliable
+The purpose of this software is to make a cheap and relatively reliable
 home EEW receiver with a Raspberry Pi.
 
 **Currently this software is under heavy development.**
 
 - EEW (Earthquake Early Warning):
-Earthquake alerts issued by the JMA (Japan Meteorological Agency)
+Earthquake alerts issued by JMA (Japan Meteorological Agency)
 immediately after an earthquake occurred
 - "The Last 10-Second":
 A GUI-based EEW client software for Windows released by WNI (Weathernews Inc.)

@@ -1,6 +1,8 @@
 extern crate yaml_rust;
 extern crate csv;
 extern crate tina;
+extern crate log4rs;
+#[macro_use] extern crate log;
 
 mod config;
 
@@ -10,12 +12,18 @@ use std::sync::Arc;
 use tina::*;
 use config::*;
 
+const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
+const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
+
 
 fn main()
 {
-	let args: Vec<String> = env::args().collect();
+	let cmd_args: Vec<String> = env::args().collect();
+	let env_arg_string = env::var(ENV_VAR_NAME).ok();
 
-	let conf_path = args.get(1).map(|s| s.as_str()).unwrap_or("tina.yaml");
+	let cmd_arg = cmd_args.get(1).map(|s| s.as_str());
+	let env_arg = env_arg_string.as_ref().map(|s| s.as_str());
+	let conf_path = cmd_arg.or(env_arg).unwrap_or(DEFAULT_CONFIG_PATH);
 
 	let conf = match Config::load_config(conf_path) {
 		Err(err) => {
@@ -23,6 +31,14 @@ fn main()
 			return;
 		},
 		Ok(c) => c
+	};
+
+	match setup_logging(conf.log_config) {
+		Err(_) => {
+			println!("Error while initializing log setting");
+			return;
+		},
+		Ok(_) => {}
 	};
 
 	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>,
@@ -52,22 +68,22 @@ fn main()
 			},
 
 			Err(e) => {
-				println!("TwitterError: {:?}", e);
+				error!("TwitterError: {:?}", e);
 			}
 		}
 	};
 
-	let stdout_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, stdout_logger: &mut StdoutLogger| {
+	let log_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, lw: &mut LoggingWrapper| {
 
 		let out = format_eew_full(&latest);
-		stdout_logger.output(&out);
+		lw.output(&out);
 	};
 
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
 	let mut cons: Vec<Connector> = Vec::new();
 
-	cons.push(Connector::new(stdout_fn, StdoutLogger::new()));
-	println!("Use: Stdout");
+	cons.push(Connector::new(log_fn, LoggingWrapper::new()));
+	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();
@@ -76,7 +92,7 @@ fn main()
 			t.access_token.clone(), t.access_secret.clone());
 		let q = LimitedQueue::with_allocation(16);
 		cons.push(Connector::new(tw_fn, (tc, q, t.in_reply_to_enabled)));
-		println!("Use: Twitter");
+		info!("Enabled: Twitter");
 	}
 
 	loop {
@@ -84,7 +100,7 @@ fn main()
 		let mut connection = match wni_client.connect() {
 			Ok(v) => v,
 			Err(e) => {
-				println!("ConnectionError: {:?}", e);
+				error!("ConnectionError: {:?}", e);
 				continue;
 			}
 		};
@@ -93,7 +109,7 @@ fn main()
 
 			let eew = match connection.wait_for_telegram(&conf.epicenter_dict, &conf.area_dict) {
 				Err(e) => {
-					println!("StreamingError: {:?}", e);
+					error!("StreamingError: {:?}", e);
 					break;
 				},
 				Ok(eew) => Arc::new(eew)

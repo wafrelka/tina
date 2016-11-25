@@ -1,5 +1,5 @@
 mod twitter_client;
-mod stdout_logger;
+mod logging_wrapper;
 
 pub use self::twitter_client::TwitterClient;
-pub use self::stdout_logger::StdoutLogger;
+pub use self::logging_wrapper::LoggingWrapper;

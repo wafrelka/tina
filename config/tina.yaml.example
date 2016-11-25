@@ -1,7 +1,6 @@
 path:
   area: "config/area_code.csv"
   epicenter: "config/epicenter_code.csv"
-  log4rs: "config/log4rs.yaml"
 
 wni:
   id: "email@example.com"

@@ -47,6 +47,8 @@ pub fn setup_logging(conf: LogConfig) -> Result<(), ()>
 	let mut appenders = Vec::new();
 	let mut loggers = Vec::new();
 
+	// FIXME: If the main log level is above Debug, the log output of tina::source::wni_client
+	//         will not be shown to the console even if conf.wni_log_console is true.
 	try!(register_inspection_point(conf.wni_log_path, conf.wni_log_console,
 		WNI_MOD_PATH.to_string(), LogLevelFilter::Debug, &mut appenders, &mut loggers));
 	try!(register_inspection_point(conf.eew_log_path, conf.eew_log_console,

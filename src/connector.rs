@@ -4,7 +4,7 @@ use std::sync::mpsc::{SyncSender, sync_channel};
 use std::sync::Arc;
 
 use eew::EEW;
-use eew_buffer::EEWBuffer;
+use collections::EEWBuffer;
 
 
 const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;

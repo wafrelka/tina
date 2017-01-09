@@ -1,5 +1,8 @@
-mod twitter_client;
-mod logging_wrapper;
+mod client;
+mod twitter;
+mod logging;
+mod destination;
 
-pub use self::twitter_client::TwitterClient;
-pub use self::logging_wrapper::LoggingWrapper;
+pub use self::twitter::Twitter;
+pub use self::logging::Logging;
+pub use self::destination::Destination;

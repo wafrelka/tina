@@ -5,38 +5,37 @@ use std::sync::Arc;
 
 use eew::EEW;
 use collections::EEWBuffer;
+use destination::Destination;
 
 
 const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;
 
-pub struct Connector {
+pub struct EEWSocket {
 	tx: SyncSender<Arc<EEW>>
 }
 
-impl Connector {
+impl EEWSocket {
 
-	pub fn new<F, A>(main_func: F, init_arg: A) -> Connector
-		where F: Fn(&[Arc<EEW>], Arc<EEW>, &mut A) + Send + 'static,
-			A: Send + 'static
+	pub fn new<D>(dest: D) -> EEWSocket where D: Destination + Send + 'static
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
 
 		thread::spawn(move || {
 
 			let mut buffer = EEWBuffer::new();
-			let mut a = init_arg;
+			let mut dest = dest;
 
 			loop {
 				let latest = rx.recv().unwrap();
 				if let Some(eews) = buffer.append(latest.clone()) {
-					main_func(eews, latest, &mut a);
+					dest.emit(eews, latest);
 				}
 			}
 		});
 
-		let con = Connector { tx: tx };
+		let sock = EEWSocket { tx: tx };
 
-		con
+		sock
 	}
 
 	pub fn emit(&self, eew: Arc<EEW>)

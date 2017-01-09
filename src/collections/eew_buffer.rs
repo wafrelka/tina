@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use collections::limited_queue::LimitedQueue;
+use collections::LimitedQueue;
 use eew::Kind;
 use eew::EEW;
 

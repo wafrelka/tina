@@ -33,7 +33,7 @@ fn main()
 		Ok(c) => c
 	};
 
-	match setup_logging(conf.log_config) {
+	match setup_global_logger(conf.log_config) {
 		Err(_) => {
 			println!("Error while initializing log setting");
 			return;
@@ -41,58 +41,23 @@ fn main()
 		Ok(_) => {}
 	};
 
-	let tw_fn = |eews: &[Arc<EEW>], latest: Arc<EEW>,
-		state: &mut (TwitterClient, LimitedQueue<(String, u64)>, bool)| {
-
-		let (ref tw, ref mut q, reply_enabled) = *state;
-
-		let out = match ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
-			Some(out) => out,
-			None => return
-		};
-
-		let prev_tw_id_opt = match reply_enabled {
-			true => q.iter().find(|x| x.0 == latest.id).map(|x| x.1),
-			false => None
-		};
-
-		match tw.update_status(&out, prev_tw_id_opt) {
-
-			Ok(tw_id) => {
-
-				if prev_tw_id_opt == None {
-					q.push((latest.id.clone(), tw_id));
-				} else {
-					q.iter_mut().find(|x| x.0 == latest.id).unwrap().1 = tw_id;
-				}
-			},
-
-			Err(e) => {
-				error!("TwitterError: {:?}", e);
-			}
-		}
-	};
-
-	let log_fn = |_: &[Arc<EEW>], latest: Arc<EEW>, lw: &mut LoggingWrapper| {
-
-		let out = format_eew_full(&latest);
-		lw.output(&out);
-	};
-
 	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
-	let mut cons: Vec<Connector> = Vec::new();
+	let mut socks: Vec<EEWSocket> = Vec::new();
 
-	cons.push(Connector::new(log_fn, LoggingWrapper::new()));
+	socks.push(EEWSocket::new(Logging::new()));
 	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {
 		let t = &conf.twitter.unwrap();
-		let tc = TwitterClient::new(
+		let tw = Twitter::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
-			t.access_token.clone(), t.access_secret.clone());
-		let q = LimitedQueue::with_allocation(16);
-		cons.push(Connector::new(tw_fn, (tc, q, t.in_reply_to_enabled)));
-		info!("Enabled: Twitter");
+			t.access_token.clone(), t.access_secret.clone(), t.in_reply_to_enabled);
+		if ! tw.is_valid() {
+			warn!("Twitter: Invalid tokens");
+		} else {
+			socks.push(EEWSocket::new(tw));
+			info!("Enabled: Twitter");
+		}
 	}
 
 	loop {
@@ -115,8 +80,8 @@ fn main()
 				Ok(eew) => Arc::new(eew)
 			};
 
-			for e in cons.iter() {
-				e.emit(eew.clone());
+			for s in socks.iter() {
+				s.emit(eew.clone());
 			}
 		}
 	}

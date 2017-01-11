@@ -7,7 +7,7 @@ use log::LogLevelFilter;
 
 
 const WNI_MOD_PATH: &'static str = "tina::source::wni_client";
-const EEW_MOD_PATH: &'static str = "tina::destination::logging_wrapper";
+const EEW_MOD_PATH: &'static str = "tina::destination::logging";
 const TINA_ROOT_MOD_PATH: &'static str = "tina";
 const FORMAT: &'static str = "[{d(%Y/%m/%d-%H:%M:%S)(utc)}][{l}\\({f}\\)] {m}{n}";
 
@@ -42,7 +42,7 @@ fn register_inspection_point(file_path: Option<String>, to_root: bool, mod_path:
 	Ok(())
 }
 
-pub fn setup_logging(conf: LogConfig) -> Result<(), ()>
+pub fn setup_global_logger(conf: LogConfig) -> Result<(), ()>
 {
 	let mut appenders = Vec::new();
 	let mut loggers = Vec::new();

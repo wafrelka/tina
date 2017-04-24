@@ -1,6 +1,7 @@
 use std::io::Read;
 
-use rustc_serialize::json::Json;
+use serde_json;
+use serde_json::Value;
 use oauthcli::SignatureMethod::HmacSha1;
 use oauthcli::OAuthAuthorizationHeaderBuilder;
 use url::Url;
@@ -85,9 +86,8 @@ impl TwitterClient {
 				let mut body = String::new();
 				try!(res.read_to_string(&mut body).map_err(|_| StatusUpdateError::Network));
 
-				let json = try!(Json::from_str(&body).map_err(|_| StatusUpdateError::InvalidResponse));
-				let id_obj = try!(json.find("id").ok_or(StatusUpdateError::InvalidResponse));
-				let id = try!(id_obj.as_u64().ok_or(StatusUpdateError::InvalidResponse));
+				let json: Value = try!(serde_json::from_str(&body).map_err(|_| StatusUpdateError::InvalidResponse));
+				let id = try!(json["id"].as_u64().ok_or(StatusUpdateError::InvalidResponse));
 
 				return Ok(id);
 			},

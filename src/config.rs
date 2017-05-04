@@ -44,7 +44,7 @@ pub struct TwitterConfig {
 	pub consumer_secret: String,
 	pub access_token: String,
 	pub access_secret: String,
-	pub in_reply_to_enabled: bool,
+	#[serde(default)] pub in_reply_to_enabled: bool,
 }
 
 #[derive(Debug)]

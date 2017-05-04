@@ -11,6 +11,7 @@ const EEW_MOD_PATH: &'static str = "tina::destination::logging";
 const TINA_ROOT_MOD_PATH: &'static str = "tina";
 const FORMAT: &'static str = "[{d(%Y/%m/%d-%H:%M:%S)(utc)}][{l}\\({f}\\)] {m}{n}";
 
+#[derive(Debug)]
 pub struct LogConfig {
 	pub wni_log_path: Option<String>,
 	pub wni_log_console: bool,

@@ -1,11 +1,10 @@
-extern crate yaml_rust;
-extern crate csv;
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
-use yaml_rust::YamlLoader;
+use csv;
+use serde_yaml;
+use serde_yaml::Value;
 use log::LogLevelFilter;
 
 use tina::LogConfig;
@@ -20,6 +19,26 @@ pub enum ConfigLoadError {
 	MissingRequiredKey,
 }
 
+#[derive(Deserialize, Debug)]
+struct RawRootConfig {
+	pub path: DictPathConfig,
+	pub wni: WNIConfig,
+	pub twitter: Option<TwitterConfig>,
+}
+
+#[derive(Deserialize, Debug)]
+struct DictPathConfig {
+	pub area: String,
+	pub epicenter: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct WNIConfig {
+	pub id: String,
+	pub password: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct TwitterConfig {
 	pub consumer_token: String,
 	pub consumer_secret: String,
@@ -28,11 +47,11 @@ pub struct TwitterConfig {
 	pub in_reply_to_enabled: bool,
 }
 
+#[derive(Debug)]
 pub struct Config {
 	pub area_dict: HashMap<[u8; 3], String>,
 	pub epicenter_dict: HashMap<[u8; 3], String>,
-	pub wni_id: String,
-	pub wni_password: String,
+	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
 	pub log_config: LogConfig,
 }
@@ -69,76 +88,31 @@ impl Config {
 		let mut data = String::new();
 		try!(file.read_to_string(&mut data).map_err(|_| ConfigLoadError::ConfigFileIo));
 
-		let docs = try!(YamlLoader::load_from_str(&data).map_err(|_| ConfigLoadError::ConfigFileIo));
-		let conf = try!(docs.first().ok_or(ConfigLoadError::InvalidConfigFormat));
+		let raw_value: Value =
+			try!(serde_yaml::from_str(&data).map_err(|_| ConfigLoadError::InvalidConfigFormat));
+		let raw_root_conf: RawRootConfig =
+			try!(serde_yaml::from_value(raw_value.clone()).map_err(|_| ConfigLoadError::MissingRequiredKey));
 
-		let wni_conf = &conf["wni"];
-		let wni_id =
-			try!(wni_conf["id"].as_str().ok_or(ConfigLoadError::MissingRequiredKey)).to_string();
-		let wni_password =
-			try!(wni_conf["password"].as_str().ok_or(ConfigLoadError::MissingRequiredKey)).to_string();
+		let area_dict = try!(load_code_dict(&raw_root_conf.path.area));
+		let epicenter_dict = try!(load_code_dict(&raw_root_conf.path.epicenter));
 
-		let path_conf = &conf["path"];
-		let area_dict_path = try!(path_conf["area"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
-		let epicenter_dict_path =
-			try!(path_conf["epicenter"].as_str().ok_or(ConfigLoadError::MissingRequiredKey));
-
-		let area_dict = try!(load_code_dict(area_dict_path));
-		let epicenter_dict = try!(load_code_dict(epicenter_dict_path));
-
-		let tw_conf = &conf["twitter"];
-		let twitter_consumer_token = tw_conf["consumer_token"].as_str();
-		let twitter_consumer_secret = tw_conf["consumer_secret"].as_str();
-		let twitter_access_token = tw_conf["access_token"].as_str();
-		let twitter_access_secret = tw_conf["access_secret"].as_str();
-		let in_reply_to_enabled = tw_conf["in_reply_to_enabled"].as_bool().unwrap_or(false);
-
-		let tw_full = {
-			let v = [twitter_consumer_token, twitter_consumer_secret,
-				twitter_access_token, twitter_consumer_secret];
-			v.iter().all(|i| i.is_some())
+		// FIXME: load config
+		let log_conf = LogConfig {
+			wni_log_path: None,
+			wni_log_console: false,
+			eew_log_path: None,
+			eew_log_console: false,
+			main_log_level: LogLevelFilter::Off
 		};
 
-		let tw = match tw_full {
-			true => Some(TwitterConfig {
-				consumer_token: twitter_consumer_token.expect("").to_string(),
-				consumer_secret: twitter_consumer_secret.expect("").to_string(),
-				access_token: twitter_access_token.expect("").to_string(),
-				access_secret: twitter_access_secret.expect("").to_string(),
-				in_reply_to_enabled: in_reply_to_enabled,
-			}),
-			false => None
-		};
-
-		let log_conf = &conf["log"];
-		let wni_log_path = log_conf["wni_log_path"].as_str().map(String::from);
-		let wni_log_console = log_conf["wni_log_console_enabled"].as_bool().unwrap_or(false);
-		let eew_log_path = log_conf["eew_log_path"].as_str().map(String::from);
-		let eew_log_console = log_conf["eew_log_console_enabled"].as_bool().unwrap_or(false);
-		let main_log_level = match log_conf["main_log_level"].as_str() {
-			Some("warning") => LogLevelFilter::Warn,
-			Some("info") => LogLevelFilter::Info,
-			Some("debug") => LogLevelFilter::Debug,
-			_ => LogLevelFilter::Warn
-		};
-
-		let lc = LogConfig {
-			wni_log_path: wni_log_path,
-			wni_log_console: wni_log_console,
-			eew_log_path: eew_log_path,
-			eew_log_console: eew_log_console,
-			main_log_level: main_log_level
-		};
-
-		let c = Config {
-			wni_id: wni_id,
-			wni_password: wni_password,
-			twitter: tw,
+		let conf = Config {
 			area_dict: area_dict,
 			epicenter_dict: epicenter_dict,
-			log_config: lc,
+			wni: raw_root_conf.wni,
+			twitter: raw_root_conf.twitter,
+			log_config: log_conf,
 		};
 
-		return Ok(c);
+		Ok(conf)
 	}
 }

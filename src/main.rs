@@ -1,4 +1,5 @@
-extern crate yaml_rust;
+#[macro_use] extern crate serde_derive;
+extern crate serde_yaml;
 extern crate csv;
 extern crate tina;
 extern crate log4rs;
@@ -41,7 +42,7 @@ fn main()
 		Ok(_) => {}
 	};
 
-	let wni_client = WNIClient::new(conf.wni_id.clone(), conf.wni_password.clone());
+	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone());
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
 	socks.push(EEWSocket::new(Logging::new()));

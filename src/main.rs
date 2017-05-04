@@ -1,14 +1,19 @@
 #[macro_use] extern crate serde_derive;
+extern crate serde;
 extern crate serde_yaml;
 extern crate csv;
 extern crate tina;
-extern crate log4rs;
-#[macro_use] extern crate log;
+#[macro_use] extern crate slog;
+#[macro_use] extern crate slog_scope;
+extern crate slog_term;
 
 mod config;
 
 use std::env;
 use std::sync::Arc;
+use slog::{Drain, LevelFilter};
+use slog_scope::set_global_logger;
+use slog_term::{PlainSyncDecorator, FullFormat};
 
 use tina::*;
 use config::*;
@@ -34,13 +39,13 @@ fn main()
 		Ok(c) => c
 	};
 
-	match setup_global_logger(conf.log_config) {
-		Err(_) => {
-			println!("Error while initializing log setting");
-			return;
-		},
-		Ok(_) => {}
-	};
+	let plain = PlainSyncDecorator::new(std::io::stdout());
+	let drain = FullFormat::new(plain).build();
+	let stdout_logger = slog::Logger::root(drain.fuse(), o!());
+
+	let filter = LevelFilter::new(stdout_logger.new(o!()), conf.log.log_level);
+	let root_logger = slog::Logger::root(filter.fuse(), o!());
+	set_global_logger(root_logger).cancel_reset();
 
 	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone());
 	let mut socks: Vec<EEWSocket> = Vec::new();

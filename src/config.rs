@@ -3,11 +3,11 @@ use std::fs::File;
 use std::io::Read;
 
 use csv;
+use serde::{Deserializer, Deserialize};
+use serde::de::Error;
 use serde_yaml;
 use serde_yaml::Value;
-use log::LogLevelFilter;
-
-use tina::LogConfig;
+use slog::Level;
 
 
 #[derive(Debug, Clone)]
@@ -15,8 +15,8 @@ pub enum ConfigLoadError {
 	ConfigFileIo,
 	CodeDictFileIO,
 	InvalidCodeFormat,
-	InvalidConfigFormat,
-	MissingRequiredKey,
+	InvalidYamlFormat,
+	InvalidKeyValue,
 }
 
 #[derive(Deserialize, Debug)]
@@ -24,12 +24,22 @@ struct RawRootConfig {
 	pub path: DictPathConfig,
 	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
+	pub log: LogConfig,
 }
 
 #[derive(Deserialize, Debug)]
 struct DictPathConfig {
 	pub area: String,
 	pub epicenter: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct LogConfig {
+	pub wni_log_path: Option<String>,
+	pub eew_log_path: Option<String>,
+	#[serde(default)] pub wni_log_redirect: bool,
+	#[serde(default)] pub eew_log_redirect: bool,
+	#[serde(deserialize_with = "deserialize_log_level")] pub log_level: Level,
 }
 
 #[derive(Deserialize, Debug)]
@@ -53,7 +63,23 @@ pub struct Config {
 	pub epicenter_dict: HashMap<[u8; 3], String>,
 	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
-	pub log_config: LogConfig,
+	pub log: LogConfig,
+}
+
+fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>
+	where D: Deserializer<'d>
+{
+	if let Ok(s) = String::deserialize(deserializer) {
+		match s.as_str() {
+			"critical" => Ok(Level::Critical),
+			"error" => Ok(Level::Error),
+			"warning" => Ok(Level::Warning),
+			"info" => Ok(Level::Info),
+			_ => Err(D::Error::custom("unknown log level"))
+		}
+	} else {
+		Ok(Level::Info)
+	}
 }
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
@@ -89,28 +115,19 @@ impl Config {
 		try!(file.read_to_string(&mut data).map_err(|_| ConfigLoadError::ConfigFileIo));
 
 		let raw_value: Value =
-			try!(serde_yaml::from_str(&data).map_err(|_| ConfigLoadError::InvalidConfigFormat));
+			try!(serde_yaml::from_str(&data).map_err(|_| ConfigLoadError::InvalidYamlFormat));
 		let raw_root_conf: RawRootConfig =
-			try!(serde_yaml::from_value(raw_value.clone()).map_err(|_| ConfigLoadError::MissingRequiredKey));
+			try!(serde_yaml::from_value(raw_value.clone()).map_err(|_| ConfigLoadError::InvalidKeyValue));
 
 		let area_dict = try!(load_code_dict(&raw_root_conf.path.area));
 		let epicenter_dict = try!(load_code_dict(&raw_root_conf.path.epicenter));
-
-		// FIXME: load config
-		let log_conf = LogConfig {
-			wni_log_path: None,
-			wni_log_console: false,
-			eew_log_path: None,
-			eew_log_console: false,
-			main_log_level: LogLevelFilter::Off
-		};
 
 		let conf = Config {
 			area_dict: area_dict,
 			epicenter_dict: epicenter_dict,
 			wni: raw_root_conf.wni,
 			twitter: raw_root_conf.twitter,
-			log_config: log_conf,
+			log: raw_root_conf.log,
 		};
 
 		Ok(conf)

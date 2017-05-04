@@ -5,8 +5,8 @@ extern crate serde_json;
 extern crate chrono;
 extern crate crypto;
 extern crate rand;
-extern crate log4rs;
-#[macro_use] extern crate log;
+#[macro_use] extern crate slog;
+#[macro_use] extern crate slog_scope;
 
 mod eew;
 mod parser;
@@ -15,7 +15,6 @@ mod collections;
 mod source;
 mod destination;
 mod translator;
-mod logger;
 
 pub use self::collections::*;
 pub use self::eew::*;
@@ -24,4 +23,3 @@ pub use self::eew_socket::EEWSocket;
 pub use self::source::{WNIClient};
 pub use self::destination::{Twitter, Logging};
 pub use self::translator::{ja_format_eew_short, format_eew_full};
-pub use self::logger::{LogConfig, setup_global_logger};

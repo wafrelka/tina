@@ -9,9 +9,12 @@ extern crate slog_term;
 
 mod config;
 
+use std::io::stdout;
 use std::env;
 use std::sync::Arc;
-use slog::{Drain, LevelFilter};
+use std::fs::OpenOptions;
+
+use slog::{Drain, Logger, Discard, Duplicate};
 use slog_scope::set_global_logger;
 use slog_term::{PlainSyncDecorator, FullFormat};
 
@@ -21,6 +24,24 @@ use config::*;
 const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
 
+fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: &Logger) -> Logger
+{
+	if let Some(ref path) = *log_path {
+
+		let file = OpenOptions::new().append(true).create(true).open(path).unwrap();
+		let drain = FullFormat::new(PlainSyncDecorator::new(file)).build();
+
+		if duplication {
+			Logger::root(Duplicate(drain, default.clone()).fuse(), o!())
+		} else {
+			Logger::root(drain.fuse(), o!())
+		}
+
+	} else {
+
+		if duplication { default.clone() } else { Logger::root(Discard, o!()) }
+	}
+}
 
 fn main()
 {
@@ -39,18 +60,20 @@ fn main()
 		Ok(c) => c
 	};
 
-	let plain = PlainSyncDecorator::new(std::io::stdout());
-	let drain = FullFormat::new(plain).build();
-	let stdout_logger = slog::Logger::root(drain.fuse(), o!());
+	let stdout_drain = FullFormat::new(PlainSyncDecorator::new(stdout())).build();
+	let stdout_logger = Logger::root(stdout_drain.fuse(), o!());
 
-	let filter = LevelFilter::new(stdout_logger.new(o!()), conf.log.log_level);
-	let root_logger = slog::Logger::root(filter.fuse(), o!());
+	let root_drain = stdout_logger.clone().filter_level(conf.log.log_level);
+	let root_logger = Logger::root(root_drain.fuse(), o!());
 	set_global_logger(root_logger).cancel_reset();
 
-	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone());
+	let eew_logger = build_specific_logger(&conf.log.eew_log_path, conf.log.eew_stdout_log, &stdout_logger);
+	let wni_logger = build_specific_logger(&conf.log.wni_log_path, conf.log.wni_stdout_log, &stdout_logger);
+
+	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
-	socks.push(EEWSocket::new(Logging::new()));
+	socks.push(EEWSocket::new(Logging::new(eew_logger)));
 	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {

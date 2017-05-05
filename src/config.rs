@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
-use csv;
+use csv::Reader;
 use serde::{Deserializer, Deserialize};
 use serde::de::Error;
 use serde_yaml;
@@ -37,8 +37,8 @@ struct DictPathConfig {
 pub struct LogConfig {
 	pub wni_log_path: Option<String>,
 	pub eew_log_path: Option<String>,
-	#[serde(default)] pub wni_log_redirect: bool,
-	#[serde(default)] pub eew_log_redirect: bool,
+	#[serde(default)] pub wni_stdout_log: bool,
+	#[serde(default)] pub eew_stdout_log: bool,
 	#[serde(deserialize_with = "deserialize_log_level")] pub log_level: Level,
 }
 
@@ -84,7 +84,7 @@ fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
 {
-	let mut reader = try!(csv::Reader::from_file(path).map_err(|_| ConfigLoadError::CodeDictFileIO));
+	let mut reader = try!(Reader::from_file(path).map_err(|_| ConfigLoadError::CodeDictFileIO));
 
 	let mut dict = HashMap::new();
 

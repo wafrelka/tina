@@ -2,6 +2,7 @@ extern crate oauthcli;
 extern crate url;
 extern crate serde_json;
 #[macro_use] extern crate hyper;
+extern crate hyper_native_tls;
 extern crate chrono;
 extern crate crypto;
 extern crate rand;

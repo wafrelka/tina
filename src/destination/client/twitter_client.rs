@@ -12,6 +12,8 @@ use hyper::client::Response;
 use hyper::method::Method;
 use hyper::status::StatusCode;
 use hyper::header::{Headers, Authorization, ContentType};
+use hyper::net::HttpsConnector;
+use hyper_native_tls::NativeTlsClient;
 
 
 pub struct TwitterClient {
@@ -37,12 +39,14 @@ impl TwitterClient {
 
 	pub fn new(consumer_key: String, consumer_secret: String, access_key: String, access_secret: String) -> TwitterClient
 	{
+		let tls_client = NativeTlsClient::new().unwrap();
+
 		TwitterClient {
 			consumer_key: consumer_key,
 			consumer_secret: consumer_secret,
 			access_key: access_key,
 			access_secret: access_secret,
-			client: Client::new()
+			client: Client::with_connector(HttpsConnector::new(tls_client))
 		}
 	}
 

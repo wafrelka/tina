@@ -132,7 +132,7 @@ fn it_should_format_alert_eew_with_high_accuracy()
 		})
 	};
 
-	let expected = "[警報/最終報] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
+	let expected = "[警報/最終] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
 
 	let result = ja_format_eew_short(&eew, None);
 
@@ -169,7 +169,7 @@ fn it_should_format_alert_eew_with_low_accuracy()
 		})
 	};
 
-	let expected = "[警報/最終報] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
+	let expected = "[警報/最終] 奈良県 震度5強 M6.8 60km (N34.4/E135.7) 09:55:59発生 | 第6報 ND20130808165608";
 
 	let result = ja_format_eew_short(&eew, None);
 

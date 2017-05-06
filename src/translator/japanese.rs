@@ -99,7 +99,7 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 		}
 	};
 
-	let last_str = if eew.is_last() { "/最終報" } else { "" };
+	let last_str = if eew.is_last() { "/最終" } else { "" };
 
 	let s = format!("[{}{}{}] {} {}発生 | {} {}",
 		head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);

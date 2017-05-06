@@ -77,11 +77,11 @@ fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateT
 
 	let adjust = |a_t: NaiveTime| {
 		let base_t = base.with_timezone(&jst).time();
-		let diff = a_t - base_t;
+		let diff = a_t.signed_duration_since(base_t);
 		if diff < Duration::seconds(0) {
-			base.checked_add(Duration::days(1) + diff)
+			base.checked_add_signed(Duration::days(1) + diff)
 		} else {
-			base.checked_add(diff)
+			base.checked_add_signed(diff)
 		}
 	};
 

@@ -1,6 +1,7 @@
 use std::io::{Read, BufRead, BufReader};
 use std::time::Duration;
 use std::collections::HashMap;
+use std::ascii::AsciiExt;
 
 use hyper::Client;
 use hyper::client::Response;
@@ -8,6 +9,7 @@ use hyper::header::Headers;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
 use rand::{thread_rng, Rng};
+use slog::{Logger, Discard};
 
 use eew::EEW;
 use parser::parse_jma_format;
@@ -32,12 +34,28 @@ pub enum WNIError {
 pub struct WNIClient {
 	wni_id: String,
 	wni_password: String,
-	client: Client
+	client: Client,
+	logger: Logger,
+}
+
+fn from_data_to_string(raw: &[u8]) -> String
+{
+	let mut s = String::new();
+
+	for c in raw.iter() {
+		if c.is_ascii() {
+			s.push(*c as char);
+		} else {
+			s.push_str(&format!("\\x{:x}", c));
+		}
+	}
+
+	s
 }
 
 impl WNIClient {
 
-	pub fn new(wni_id: String, wni_password: String) -> WNIClient
+	pub fn new(wni_id: String, wni_password: String, logger: Option<Logger>) -> WNIClient
 	{
 		let mut client = Client::new();
 		client.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)));
@@ -45,7 +63,8 @@ impl WNIClient {
 		WNIClient {
 			wni_id: wni_id,
 			wni_password: wni_password,
-			client: client
+			client: client,
+			logger: logger.unwrap_or(Logger::root(Discard, o!()))
 		}
 	}
 
@@ -78,21 +97,22 @@ impl WNIClient {
 		if res.headers.get::<XWNIResult>() != Some(&XWNIResult("OK".to_owned())) {
 			Err(WNIError::Authentication)
 		} else {
-			Ok(WNIConnection::new(res))
+			Ok(WNIConnection::new(res, &self.logger))
 		}
 	}
 }
 
-pub struct WNIConnection {
-	reader: BufReader<Response>
+pub struct WNIConnection<'a> {
+	reader: BufReader<Response>,
+	logger: &'a Logger,
 }
 
-impl WNIConnection {
+impl<'a> WNIConnection<'a> {
 
-	pub fn new(response: Response) -> WNIConnection
+	pub fn new(response: Response, logger: &Logger) -> WNIConnection
 	{
 		let reader = BufReader::new(response);
-		WNIConnection { reader: reader }
+		WNIConnection { reader: reader, logger: logger }
 	}
 
 	pub fn wait_for_telegram(&mut self,
@@ -107,7 +127,7 @@ impl WNIConnection {
 			return Err(WNIError::ConnectionClosed);
 		}
 
-		debug!("Received: {}", String::from_utf8_lossy(&buffer));
+		slog_info!(self.logger, "{}", from_data_to_string(&buffer));
 
 		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;
 		let right = buffer.len() - 2;

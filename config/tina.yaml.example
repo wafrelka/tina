@@ -15,7 +15,7 @@ twitter:
 
 log:
   eew_log_path: "eew.log"
-  eew_log_console: false
+  eew_stdout_log: false
   wni_log_path: "wni.log"
-  wni_log_console: false
-  main_log_level: "info"
+  wni_stdout_log: false
+  log_level: "info"

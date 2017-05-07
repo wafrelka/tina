@@ -115,19 +115,43 @@ impl<'a> WNIConnection<'a> {
 		WNIConnection { reader: reader, logger: logger }
 	}
 
+	fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> Result<usize, WNIError>
+	{
+		buf.clear();
+
+		match self.reader.read_until(byte, buf) {
+			Err(_) => Err(WNIError::Network),
+			Ok(0) => Err(WNIError::ConnectionClosed),
+			Ok(s) =>
+				if buf.last().map(|v| *v) != Some(byte) {
+					Err(WNIError::ConnectionClosed)
+				} else {
+					Ok(s)
+				}
+		}
+	}
+
+	fn output_log(&self, buf: &Vec<u8>)
+	{
+		slog_info!(self.logger, "{}", from_data_to_string(&buf));
+	}
+
 	pub fn wait_for_telegram(&mut self,
 		epicenter_dict: &HashMap<[u8; 3], String>,
 		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WNIError>
 	{
 		let mut buffer = vec! {};
 
-		let size = try!(self.reader.read_until(b'\x03', &mut buffer).map_err(|_| WNIError::Network));
-
-		if size == 0 {
-			return Err(WNIError::ConnectionClosed);
+		loop {
+			try!(self.read_until(b'\n', &mut buffer));
+			self.output_log(&buffer);
+			if buffer == b"\x01\n" {
+				break;
+			}
 		}
 
-		slog_info!(self.logger, "{}", from_data_to_string(&buffer));
+		try!(self.read_until(b'\x03', &mut buffer));
+		self.output_log(&buffer);
 
 		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;
 		let right = buffer.len() - 2;

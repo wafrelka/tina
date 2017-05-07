@@ -22,6 +22,8 @@ header! { (XWNIResult, "X-WNI-Result") => [String] }
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 const LOGIN_PATH: &'static str = "/login";
 const TIMEOUT_SECS: u64 = 3 * 60;
+const ADDITIONAL_CAPACITY_FOR_HEX_ENCODING: usize = 256;
+const DEFAULT_CAPACITY_FOR_TELEGRAM_BUFFER: usize = 2048;
 
 #[derive(Debug, Clone)]
 pub enum WNIError {
@@ -40,7 +42,8 @@ pub struct WNIClient {
 
 fn from_data_to_string(raw: &[u8]) -> String
 {
-	let mut s = String::new();
+	// reduce reallocation
+	let mut s = String::with_capacity(raw.len() + ADDITIONAL_CAPACITY_FOR_HEX_ENCODING);
 
 	for c in raw.iter() {
 		if c.is_ascii() {
@@ -115,18 +118,19 @@ impl<'a> WNIConnection<'a> {
 		WNIConnection { reader: reader, logger: logger }
 	}
 
-	fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> Result<usize, WNIError>
+	fn read_until(&mut self, byte: u8) -> Result<Vec<u8>, WNIError>
 	{
-		buf.clear();
+		// reduce reallocation
+		let mut buf = Vec::with_capacity(DEFAULT_CAPACITY_FOR_TELEGRAM_BUFFER);
 
-		match self.reader.read_until(byte, buf) {
+		match self.reader.read_until(byte, &mut buf) {
 			Err(_) => Err(WNIError::Network),
 			Ok(0) => Err(WNIError::ConnectionClosed),
-			Ok(s) =>
+			Ok(_) =>
 				if buf.last().map(|v| *v) != Some(byte) {
 					Err(WNIError::ConnectionClosed)
 				} else {
-					Ok(s)
+					Ok(buf)
 				}
 		}
 	}
@@ -140,17 +144,15 @@ impl<'a> WNIConnection<'a> {
 		epicenter_dict: &HashMap<[u8; 3], String>,
 		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WNIError>
 	{
-		let mut buffer = vec! {};
-
 		loop {
-			try!(self.read_until(b'\n', &mut buffer));
+			let buffer = try!(self.read_until(b'\n'));
 			self.output_log(&buffer);
 			if buffer == b"\x01\n" {
 				break;
 			}
 		}
 
-		try!(self.read_until(b'\x03', &mut buffer));
+		let buffer = try!(self.read_until(b'\x03'));
 		self.output_log(&buffer);
 
 		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;

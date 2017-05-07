@@ -46,7 +46,7 @@ fn from_data_to_string(raw: &[u8]) -> String
 		if c.is_ascii() {
 			s.push(*c as char);
 		} else {
-			s.push_str(&format!("\\x{:x}", c));
+			s.push_str(&format!("\\x{:02x}", c));
 		}
 	}
 

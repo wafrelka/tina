@@ -133,7 +133,7 @@ impl<'a> WNIConnection<'a> {
 
 	fn output_log(&self, buf: &Vec<u8>)
 	{
-		slog_info!(self.logger, "{}", from_data_to_string(&buf));
+		slog_info!(self.logger, "{}", from_data_to_string(&buf).trim_right_matches('\n'));
 	}
 
 	pub fn wait_for_telegram(&mut self,

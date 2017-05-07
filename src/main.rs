@@ -89,15 +89,21 @@ fn main()
 		}
 	}
 
+	let mut moderator = Moderator::new();
+
 	loop {
 
 		let mut connection = match wni_client.connect() {
 			Ok(v) => v,
 			Err(e) => {
 				error!("ConnectionError: {:?}", e);
+				moderator.wait_for_retry();
+				moderator.add_count();
 				continue;
 			}
 		};
+
+		moderator.reset();
 
 		loop {
 

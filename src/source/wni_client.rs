@@ -12,7 +12,7 @@ use rand::{thread_rng, Rng};
 use slog::{Logger, Discard};
 
 use eew::EEW;
-use parser::parse_jma_format;
+use parser::{parse_jma_format, JMAFormatParseError};
 
 
 header! { (XWNIAccount, "X-WNI-Account") => [String] }
@@ -31,6 +31,7 @@ pub enum WNIError {
 	Network,
 	ConnectionClosed,
 	InvalidData,
+	ParseError(JMAFormatParseError)
 }
 
 pub struct WNIClient {
@@ -164,7 +165,7 @@ impl<'a> WNIConnection<'a> {
 
 		let raw_data = &buffer[left..right];
 		let eew = try!(parse_jma_format(raw_data, epicenter_dict, area_dict)
-			.map_err(|_| WNIError::InvalidData));
+			.map_err(|e| WNIError::ParseError(e)));
 
 		return Ok(eew);
 	}

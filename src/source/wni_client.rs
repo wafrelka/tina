@@ -138,7 +138,11 @@ impl<'a> WNIConnection<'a> {
 
 	fn output_log(&self, buf: &Vec<u8>)
 	{
-		slog_info!(self.logger, "{}", from_data_to_string(&buf).trim_right_matches('\n'));
+		// remove the last LF if needed (the behavior is different from String::trim_right_matches)
+		let trailing_lf = buf.last() == Some(b'\n').as_ref();
+		let trimmed = if trailing_lf { &buf[0..(buf.len() - 1)] } else { &buf };
+
+		slog_info!(self.logger, "{}", from_data_to_string(trimmed));
 	}
 
 	pub fn wait_for_telegram(&mut self,

@@ -104,6 +104,7 @@ fn main()
 		};
 
 		moderator.reset();
+		info!("Connected: WNI");
 
 		loop {
 

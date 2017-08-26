@@ -6,6 +6,7 @@ use std::sync::Arc;
 use eew::EEW;
 use collections::EEWBuffer;
 use destination::Destination;
+use condition::Condition;
 
 
 const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;
@@ -16,7 +17,8 @@ pub struct EEWSocket {
 
 impl EEWSocket {
 
-	pub fn new<D>(dest: D) -> EEWSocket where D: Destination + Send + 'static
+	pub fn new<D, C>(dest: D, cond: C) -> EEWSocket
+		where D: Destination + Send + 'static, C: Condition + Send + 'static
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
 
@@ -24,11 +26,22 @@ impl EEWSocket {
 
 			let mut buffer = EEWBuffer::new();
 			let mut dest = dest;
+			let cond = cond;
 
 			loop {
+
 				let latest = rx.recv().unwrap();
+
 				if let Some(eews) = buffer.append(latest.clone()) {
-					dest.emit(eews, latest);
+
+					if cond.is_satisfied(eews) {
+						dest.emit(eews, latest);
+					} else {
+						info!("EEW Skipped (condition)");
+					}
+
+				} else {
+					info!("EEW Skipped (buffer)");
 				}
 			}
 		});

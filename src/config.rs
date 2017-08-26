@@ -75,6 +75,7 @@ fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>
 			"error" => Ok(Level::Error),
 			"warning" => Ok(Level::Warning),
 			"info" => Ok(Level::Info),
+			"debug" => Ok(Level::Debug),
 			_ => Err(D::Error::custom("unknown log level"))
 		}
 	} else {

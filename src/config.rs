@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::error::Error as StdError;
 
 use csv::Reader;
 use serde::{Deserializer, Deserialize};
-use serde::de::Error;
+use serde::de::Error as SerdeError;
 use serde_yaml;
 use serde_yaml::Value;
 use slog::Level;
@@ -16,10 +17,11 @@ pub enum ConfigLoadError {
 	CodeDictFileIO,
 	InvalidCodeFormat,
 	InvalidYamlFormat,
-	InvalidKeyValue,
+	InvalidKeyValue(String),
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 struct RawRootConfig {
 	pub path: DictPathConfig,
 	pub wni: WNIConfig,
@@ -28,12 +30,14 @@ struct RawRootConfig {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 struct DictPathConfig {
 	pub area: String,
 	pub epicenter: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct LogConfig {
 	pub wni_log_path: Option<String>,
 	pub eew_log_path: Option<String>,
@@ -43,12 +47,14 @@ pub struct LogConfig {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct WNIConfig {
 	pub id: String,
 	pub password: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct TwitterConfig {
 	pub consumer_token: String,
 	pub consumer_secret: String,
@@ -118,7 +124,8 @@ impl Config {
 		let raw_value: Value =
 			try!(serde_yaml::from_str(&data).map_err(|_| ConfigLoadError::InvalidYamlFormat));
 		let raw_root_conf: RawRootConfig =
-			try!(serde_yaml::from_value(raw_value.clone()).map_err(|_| ConfigLoadError::InvalidKeyValue));
+			serde_yaml::from_value(raw_value.clone())
+			.map_err(|err| ConfigLoadError::InvalidKeyValue(err.description().to_owned()))?;
 
 		let area_dict = try!(load_code_dict(&raw_root_conf.path.area));
 		let epicenter_dict = try!(load_code_dict(&raw_root_conf.path.epicenter));

@@ -6,6 +6,7 @@ use eew::EEW;
 
 
 const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
+const INITIAL_BLOCK_CAPACITY: usize = 64;
 
 pub struct EEWBuffer {
 	buffer: LimitedQueue<Vec<Arc<EEW>>>, // each element of buffer must have at least 1 EEW object
@@ -59,7 +60,9 @@ impl EEWBuffer {
 
 	fn create_block(&mut self, eew: Arc<EEW>)
 	{
-		self.buffer.push(vec! { eew });
+		let mut v = Vec::with_capacity(INITIAL_BLOCK_CAPACITY);
+		v.push(eew);
+		self.buffer.push(v);
 	}
 
 	pub fn append(&mut self, eew: Arc<EEW>) -> Option<&[Arc<EEW>]>

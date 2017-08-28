@@ -59,25 +59,23 @@ pub fn format_intensity(i: IntensityClass) -> String
 
 pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 {
-	let prev_intensity = prev_opt.map(|p| p.get_maximum_intensity_class());
-
-	match eew.get_eew_phase() {
-		None => return None,
-		Some(EEWPhase::Cancel) =>
-			return Some(format!("[取消] --- | {} {}", format_eew_number(eew), eew.id)),
-		Some(EEWPhase::Forecast) | Some(EEWPhase::Alert) => {}
-	};
-
-	let id = &eew.id;
-	let num_str = format_eew_number(eew);
+	match eew.kind {
+		Kind::Cancel => return Some(format!("[取消] --- | {} {}", format_eew_number(eew), eew.id)),
+		Kind::DrillCancel => return Some(format!("[訓練 | 取消] --- | {} {}", format_eew_number(eew), eew.id)),
+		_ => {}
+	}
 
 	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
 		(Some(EEWPhase::Forecast), true) => "予報",
 		(Some(EEWPhase::Forecast), false) => "速報",
 		(Some(EEWPhase::Alert), _) => "警報",
-		_ => unreachable!()
+		_ => return None
 	};
 
+	let id = &eew.id;
+	let num_str = format_eew_number(eew);
+
+	let prev_intensity = prev_opt.map(|p| p.get_maximum_intensity_class());
 	let updown = match prev_intensity.map(|i| eew.get_maximum_intensity_class().cmp(&i)) {
 		Some(Ordering::Greater) => "↑",
 		Some(Ordering::Less) => "↓",
@@ -100,9 +98,15 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 	};
 
 	let last_str = if eew.is_last() { "/最終" } else { "" };
+	let kind_str = match eew.kind {
+		Kind::Reference => "参考情報 | ",
+		Kind::Test => "テスト配信 | ",
+		Kind::Drill => "訓練 | ",
+		_ => ""
+	};
 
-	let s = format!("[{}{}{}] {} {}発生 | {} {}",
-		head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);
+	let s = format!("[{}{}{}{}] {} {}発生 | {} {}",
+		kind_str, head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);
 
 	return Some(s);
 }

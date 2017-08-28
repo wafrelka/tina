@@ -23,30 +23,6 @@ pub enum IntensityClass {
 	Seven
 }
 
-
-pub fn get_eew_phase(eew: &EEW) -> Option<EEWPhase>
-{
-	match eew.kind {
-		Kind::Drill | Kind::DrillCancel => return None,
-		Kind::Reference | Kind::Test => return None,
-		Kind::Cancel => return Some(EEWPhase::Cancel),
-		Kind::Normal => {}
-	};
-
-	if let EEWDetail::Full(ref detail) = eew.detail {
-
-		let phase = match detail.warning_status {
-			WarningStatus::Alert => EEWPhase::Alert,
-			WarningStatus::Forecast => EEWPhase::Forecast,
-			_ => return None
-		};
-
-		return Some(phase);
-	}
-
-	return None;
-}
-
 impl IntensityClass {
 	pub fn new(intensity: Option<f32>) -> IntensityClass {
 		if let Some(i) = intensity {
@@ -72,7 +48,23 @@ impl EEW {
 
 	pub fn get_eew_phase(&self) -> Option<EEWPhase>
 	{
-		get_eew_phase(&self)
+		match self.kind {
+
+			Kind::Cancel | Kind::DrillCancel => Some(EEWPhase::Cancel),
+
+			Kind::Normal | Kind::Drill | Kind::Reference | Kind::Test => {
+
+				if let EEWDetail::Full(ref detail) = self.detail {
+					match detail.warning_status {
+						WarningStatus::Alert => Some(EEWPhase::Alert),
+						WarningStatus::Forecast => Some(EEWPhase::Forecast),
+						_ => None
+					}
+				} else {
+					None
+				}
+			}
+		}
 	}
 
 	pub fn is_high_accuracy(&self) -> bool

@@ -10,7 +10,7 @@ pub const FALSE_CONDITION: ConstantCondition = ConstantCondition(false);
 pub struct ConstantCondition(pub bool);
 
 impl Condition for ConstantCondition {
-	fn is_satisfied(&self, _: &[Arc<EEW>]) -> bool
+	fn is_satisfied(&self, _: &Arc<EEW>, _: &[Arc<EEW>]) -> bool
 	{
 		return self.0;
 	}

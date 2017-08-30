@@ -65,6 +65,11 @@ impl EEWBuffer {
 		self.buffer.push(v);
 	}
 
+	pub fn get(&self, eew_id: &str) -> Option<&[Arc<EEW>]>
+	{
+		self.lookup(eew_id).map(|idx| self.buffer[idx].as_slice())
+	}
+
 	pub fn append(&mut self, eew: Arc<EEW>) -> Option<&[Arc<EEW>]>
 	{
 		match self.lookup(&eew.id) {

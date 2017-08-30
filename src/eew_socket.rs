@@ -24,7 +24,10 @@ impl EEWSocket {
 
 		thread::spawn(move || {
 
-			let mut buffer = EEWBuffer::new();
+			// TODO: find a more desirable way to handle EEW filtering
+			let mut full_buffer = EEWBuffer::new();
+			let mut filtered_buffer = EEWBuffer::new();
+
 			let mut dest = dest;
 			let cond = cond;
 
@@ -32,12 +35,21 @@ impl EEWSocket {
 
 				let latest = rx.recv().unwrap();
 
-				if let Some(eews) = buffer.append(latest.clone()) {
+				if let Some(_) = full_buffer.append(latest.clone()) {
 
-					if cond.is_satisfied(eews) {
-						dest.emit(eews, latest);
+					{
+						let prev_filtered_eews = filtered_buffer.get(&latest.id).unwrap_or_default();
+
+						if !cond.is_satisfied(&latest, prev_filtered_eews) {
+							info!("EEW Skipped (condition)");
+							continue;
+						}
+					}
+
+					if let Some(filtered_eews) = filtered_buffer.append(latest.clone()) {
+						dest.emit(filtered_eews, latest);
 					} else {
-						info!("EEW Skipped (condition)");
+						error!("Cannot append latest EEW into filtered_eews");
 					}
 
 				} else {

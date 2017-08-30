@@ -84,7 +84,7 @@ fn main()
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
-			socks.push(EEWSocket::new(tw, TRUE_CONDITION));
+			socks.push(EEWSocket::new(tw, build_yaml_condition(t.cond.clone())));
 			info!("Enabled: Twitter");
 		}
 	}

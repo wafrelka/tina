@@ -4,7 +4,7 @@ use std::sync::mpsc::{SyncSender, sync_channel};
 use std::sync::Arc;
 
 use eew::EEW;
-use collections::EEWBuffer;
+use collections::{EEWBuffer, EEWBufferError};
 use destination::Destination;
 use condition::Condition;
 
@@ -24,36 +24,17 @@ impl EEWSocket {
 
 		thread::spawn(move || {
 
-			// TODO: find a more desirable way to handle EEW filtering
-			let mut full_buffer = EEWBuffer::new();
-			let mut filtered_buffer = EEWBuffer::new();
-
+			let mut buffer = EEWBuffer::new(cond);
 			let mut dest = dest;
-			let cond = cond;
 
 			loop {
 
 				let latest = rx.recv().unwrap();
 
-				if let Some(_) = full_buffer.append(latest.clone()) {
-
-					{
-						let prev_filtered_eews = filtered_buffer.get(&latest.id).unwrap_or_default();
-
-						if !cond.is_satisfied(&latest, prev_filtered_eews) {
-							info!("EEW Skipped (condition)");
-							continue;
-						}
-					}
-
-					if let Some(filtered_eews) = filtered_buffer.append(latest.clone()) {
-						dest.emit(filtered_eews, latest);
-					} else {
-						error!("Cannot append latest EEW into filtered_eews");
-					}
-
-				} else {
-					info!("EEW Skipped (buffer)");
+				match buffer.append(latest) {
+					Ok(list) => { dest.emit(&list.filtered, list.latest.clone()); },
+					Err(EEWBufferError::Order) => { info!("EEW Skipped (order)") },
+					Err(EEWBufferError::Filter) => { info!("EEW Skipped (filter)"); },
 				}
 			}
 		});

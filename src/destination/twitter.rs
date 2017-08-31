@@ -34,7 +34,7 @@ impl Twitter {
 
 impl Destination for Twitter {
 
-	fn emit(&mut self, eews: &[Arc<EEW>], latest: Arc<EEW>)
+	fn emit(&mut self, latest: &Arc<EEW>, eews: &[Arc<EEW>])
 	{
 		let out = match ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
 			Some(out) => out,

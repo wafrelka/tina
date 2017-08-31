@@ -32,7 +32,7 @@ impl EEWSocket {
 				let latest = rx.recv().unwrap();
 
 				match buffer.append(latest) {
-					Ok(list) => { dest.emit(&list.filtered, list.latest.clone()); },
+					Ok(list) => { dest.emit(&list.latest, &list.filtered); },
 					Err(EEWBufferError::Order) => { info!("EEW Skipped (order)") },
 					Err(EEWBufferError::Filter) => { info!("EEW Skipped (filter)"); },
 				}

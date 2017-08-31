@@ -21,7 +21,7 @@ impl Logging {
 
 impl Destination for Logging {
 
-	fn emit(&mut self, _: &[Arc<EEW>], latest: Arc<EEW>)
+	fn emit(&mut self, latest: &Arc<EEW>, _: &[Arc<EEW>])
 	{
 		let out = format_eew_full(&latest);
 		slog_info!(self.logger, "{}", out.trim_right_matches('\n'));

@@ -27,4 +27,4 @@ pub use self::source::{WNIClient};
 pub use self::destination::{Twitter, Logging};
 pub use self::translator::{ja_format_eew_short, format_eew_full};
 pub use self::moderator::Moderator;
-pub use self::condition::{Condition, TRUE_CONDITION, FALSE_CONDITION, DisjunctiveCondition};
+pub use self::condition::{Condition, TRUE_CONDITION, FALSE_CONDITION, DisjunctiveCondition, ValueCondition};

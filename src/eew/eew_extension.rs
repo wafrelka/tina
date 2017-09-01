@@ -93,4 +93,9 @@ impl EEW {
 			_ => false
 		}
 	}
+
+	pub fn is_drill(&self) -> bool
+	{
+		self.kind == Kind::Drill || self.kind == Kind::DrillCancel
+	}
 }

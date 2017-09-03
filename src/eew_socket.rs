@@ -17,7 +17,7 @@ pub struct EEWSocket {
 
 impl EEWSocket {
 
-	pub fn new<D, C>(dest: D, cond: C) -> EEWSocket
+	pub fn new<D, C>(dest: D, cond: C, name: String) -> EEWSocket
 		where D: Destination + Send + 'static, C: Condition + Send + 'static
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
@@ -33,8 +33,8 @@ impl EEWSocket {
 
 				match buffer.append(latest) {
 					Ok(list) => { dest.emit(&list.latest, &list.filtered); },
-					Err(EEWBufferError::Order) => { info!("EEW Skipped (order)") },
-					Err(EEWBufferError::Filter) => { info!("EEW Skipped (filter)"); },
+					Err(EEWBufferError::Order) => { debug!("{}: EEW Skipped (order)", name) },
+					Err(EEWBufferError::Filter) => { debug!("{}: EEW Skipped (filter)", name); },
 				}
 			}
 		});

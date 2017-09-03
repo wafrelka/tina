@@ -60,6 +60,7 @@ impl EEWList {
 
 		if ok {
 			self.full.push(eew.clone());
+			self.latest = eew.clone();
 			if cond.is_satisfied(&eew, &self.filtered) {
 				self.filtered.push(eew);
 				Ok(())

@@ -28,6 +28,7 @@ struct RawRootConfig {
 	pub path: DictPathConfig,
 	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
+	pub slack: Option<SlackConfig>,
 	pub log: LogConfig,
 }
 
@@ -66,6 +67,13 @@ pub struct TwitterConfig {
 	pub cond: Option<Vec<ValueConditionConfig>>,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct SlackConfig {
+	pub webhook_url: String,
+	pub cond: Option<Vec<ValueConditionConfig>>,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ValueConditionConfig {
@@ -97,6 +105,7 @@ pub struct Config {
 	pub epicenter_dict: HashMap<[u8; 3], String>,
 	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
+	pub slack: Option<SlackConfig>,
 	pub log: LogConfig,
 }
 
@@ -186,6 +195,7 @@ impl Config {
 			epicenter_dict: epicenter_dict,
 			wni: raw_root_conf.wni,
 			twitter: raw_root_conf.twitter,
+			slack: raw_root_conf.slack,
 			log: raw_root_conf.log,
 		};
 

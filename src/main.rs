@@ -89,6 +89,19 @@ fn main()
 		}
 	}
 
+	if conf.slack.is_some() {
+		let s = &conf.slack.unwrap();
+		match Slack::build(&s.webhook_url) {
+			Ok(sl) => {
+				socks.push(EEWSocket::new(sl, build_yaml_condition(s.cond.clone()), "Slack".to_string()));
+				info!("Enabled: Slack");
+			},
+			Err(_) => {
+				warn!("Slack: Invalid webhook url");
+			}
+		}
+	}
+
 	let mut moderator = Moderator::new();
 
 	loop {

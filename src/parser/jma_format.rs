@@ -100,6 +100,14 @@ pub fn parse_jma_format(text: &[u8],
 		return Err(JMAFormatParseError::TooShort);
 	}
 
+	let issue_pattern = match &text[0..2] {
+		b"35" => IssuePattern::IntensityOnly,
+		b"36" => IssuePattern::LowAccuracy,
+		b"37" => IssuePattern::HighAccuracy,
+		b"39" => IssuePattern::Cancel,
+		_ => return Err(JMAFormatParseError::InvalidPattern),
+	};
+
 	let source = match &text[3..5] {
 		b"03" => Source::Tokyo,
 		b"04" => Source::Osaka,
@@ -140,9 +148,10 @@ pub fn parse_jma_format(text: &[u8],
 	// we don't accept an EEW which has no telegram number
 	let number = try!(parse_number(&text[60..62]).ok_or(JMAFormatParseError::InvalidNumber));
 
-	if &text[0..2] == b"39" {
+	if issue_pattern == IssuePattern::Cancel {
 
 		return Ok(EEW {
+			issue_pattern: issue_pattern,
 			source: source,
 			kind: kind,
 			issued_at: issued_at,
@@ -150,17 +159,9 @@ pub fn parse_jma_format(text: &[u8],
 			id: id.to_string(),
 			status: status,
 			number: number,
-			detail: EEWDetail::Cancel,
+			detail: None,
 		});
 	}
-
-	let issue_pattern = match &text[0..2] {
-		b"35" => IssuePattern::IntensityOnly,
-		b"36" => IssuePattern::LowAccuracy,
-		b"37" => IssuePattern::HighAccuracy,
-		_ => return Err(JMAFormatParseError::InvalidPattern)
-	};
-
 	let epicenter_name = match epicenter_code_dict.get(&text[86..89]) {
 		Some(s) => s.clone(),
 		None => return Err(JMAFormatParseError::UnknownEpicenter)
@@ -310,7 +311,8 @@ pub fn parse_jma_format(text: &[u8],
 				None => return Err(JMAFormatParseError::InvalidEBI)
 			};
 
-			let left_intensity = try!(parse_intensity(&part[6..8]).ok_or(JMAFormatParseError::InvalidEBI));
+			let left_intensity =
+				parse_intensity(&part[6..8]).ok_or(JMAFormatParseError::InvalidEBI)?;
 
 			let right_intensity = {
 				let t = &part[8..10];
@@ -328,7 +330,7 @@ pub fn parse_jma_format(text: &[u8],
 				None => (left_intensity, None)
 			};
 
-			let reached_at = {
+			let reach_at = {
 				let t = &part[11..17];
 				match parse_arrival_time(t, &occurred_at) {
 					Some(v) => Some(v),
@@ -357,7 +359,7 @@ pub fn parse_jma_format(text: &[u8],
 				area_name: area_name,
 				minimum_intensity: minimum_intensity,
 				maximum_intensity: maximum_intensity,
-				reached_at: reached_at,
+				reach_at: reach_at,
 				warning_status: local_warning_status,
 				wave_status: wave_status,
 			};
@@ -372,9 +374,8 @@ pub fn parse_jma_format(text: &[u8],
 		}
 	}
 
-	let detail = FullEEW {
+	let detail = EEWDetail {
 
-		issue_pattern: issue_pattern,
 		epicenter_name: epicenter_name,
 		epicenter: (lat, lon),
 		depth: depth,
@@ -391,7 +392,8 @@ pub fn parse_jma_format(text: &[u8],
 		area_info: area_info
 	};
 
-	return Ok(EEW{
+	return Ok( EEW {
+		issue_pattern: issue_pattern,
 		source: source,
 		kind: kind,
 		issued_at: issued_at,
@@ -399,6 +401,6 @@ pub fn parse_jma_format(text: &[u8],
 		id: id.to_string(),
 		status: status,
 		number: number,
-		detail: EEWDetail::Full(detail),
+		detail: Some(detail),
 	});
 }

@@ -49,10 +49,10 @@ pub fn format_intensity(i: IntensityClass) -> String
 		IntensityClass::Two => "震度2",
 		IntensityClass::Three => "震度3",
 		IntensityClass::Four => "震度4",
-		IntensityClass::FiveMinus => "震度5弱",
-		IntensityClass::FivePlus => "震度5強",
-		IntensityClass::SixMinus => "震度6弱",
-		IntensityClass::SixPlus => "震度6強",
+		IntensityClass::FiveLower => "震度5弱",
+		IntensityClass::FiveUpper => "震度5強",
+		IntensityClass::SixLower => "震度6弱",
+		IntensityClass::SixUpper => "震度6強",
 		IntensityClass::Seven => "震度7"
 	}.to_string()
 }
@@ -84,9 +84,9 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 
 	let detail_str = match eew.detail {
 
-		EEWDetail::Cancel => "---".to_string(),
+		None => "---".to_string(),
 
-		EEWDetail::Full(ref detail) => {
+		Some(ref detail) => {
 
 			let intensity = format_intensity(eew.get_maximum_intensity_class());
 

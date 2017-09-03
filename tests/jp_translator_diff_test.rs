@@ -12,11 +12,12 @@ enum Diff { Up, Down, Same }
 fn make_dummy_eew(maximum_intensity: Option<f32>) -> EEW
 {
 	EEW {
+		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo, kind: Kind::Normal, issued_at: UTC.timestamp(12345, 0),
 		occurred_at: UTC.timestamp(12345, 0), id: "XXX".to_owned(),
 		status: Status::Normal, number: 1,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::HighAccuracy, epicenter_name: "YYY".to_owned(),
+		detail: Some(EEWDetail {
+			epicenter_name: "YYY".to_owned(),
 			epicenter: (38.0, 142.0), depth: Some(10.0), magnitude: Some(5.9),
 			maximum_intensity: maximum_intensity,
 			epicenter_accuracy: EpicenterAccuracy::Single, depth_accuracy: DepthAccuracy::Single,
@@ -37,10 +38,10 @@ fn expect_eew_string(maximum_intensity: Option<f32>, updown: Diff) -> String
 		IntensityClass::Two => "震度2",
 		IntensityClass::Three => "震度3",
 		IntensityClass::Four => "震度4",
-		IntensityClass::FiveMinus => "震度5弱",
-		IntensityClass::FivePlus => "震度5強",
-		IntensityClass::SixMinus => "震度6弱",
-		IntensityClass::SixPlus => "震度6強",
+		IntensityClass::FiveLower => "震度5弱",
+		IntensityClass::FiveUpper => "震度5強",
+		IntensityClass::SixLower => "震度6弱",
+		IntensityClass::SixUpper => "震度6強",
 		IntensityClass::Seven => "震度7"
 	};
 	let updown_str = match updown {

@@ -79,8 +79,8 @@ impl Condition for ValueCondition {
 			test_bool(self.cancel, latest.get_eew_phase() == Some(EEWPhase::Cancel)),
 			test_bool(self.drill, latest.is_drill()),
 			test_bool(self.test_or_reference, latest.kind == Kind::Test || latest.kind == Kind::Reference),
-			test_detail(self.magnitude_over, latest, |v, detail| detail.magnitude.map_or(false, |m| m > v)),
-			test_detail(self.intensity_over, latest, |v, detail| detail.maximum_intensity.map_or(false, |m| m > v)),
+			test_detail(self.magnitude_over, latest, |v, detail| detail.magnitude.map_or(false, |m| m >= v)),
+			test_detail(self.intensity_over, latest, |v, detail| detail.maximum_intensity.map_or(false, |m| m >= v)),
 		];
 
 		let comp_conds = [
@@ -90,12 +90,12 @@ impl Condition for ValueCondition {
 				|v, latest, prev| (latest.is_high_accuracy() != prev.is_high_accuracy()) == v),
 			test_with_prev_detail(self.magnitude_up, latest, prev,
 				|v, latest, prev| match (latest.magnitude, prev.magnitude) {
-					(Some(x), Some(y)) => (x - y) > v,
+					(Some(x), Some(y)) => (x - y) >= v,
 					_ => false
 				}),
 			test_with_prev_detail(self.magnitude_down, latest, prev,
 				|v, latest, prev| match (latest.magnitude, prev.magnitude) {
-					(Some(x), Some(y)) => (y - x) > v,
+					(Some(x), Some(y)) => (y - x) >= v,
 					_ => false
 				}),
 			test_with_prev_detail(self.intensity_up, latest, prev,

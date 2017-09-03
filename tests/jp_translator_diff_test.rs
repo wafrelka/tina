@@ -9,7 +9,7 @@ use tina::*;
 
 enum Diff { Up, Down, Same }
 
-fn make_dummy_eew(maximum_intensity: Option<f32>) -> EEW
+fn make_normal_eew(maximum_intensity: Option<IntensityClass>) -> EEW
 {
 	EEW {
 		issue_pattern: IssuePattern::HighAccuracy,
@@ -19,7 +19,7 @@ fn make_dummy_eew(maximum_intensity: Option<f32>) -> EEW
 		detail: Some(EEWDetail {
 			epicenter_name: "YYY".to_owned(),
 			epicenter: (38.0, 142.0), depth: Some(10.0), magnitude: Some(5.9),
-			maximum_intensity: maximum_intensity.map(|i| IntensityClass::new(i)),
+			maximum_intensity: maximum_intensity,
 			epicenter_accuracy: EpicenterAccuracy::Single, depth_accuracy: DepthAccuracy::Single,
 			magnitude_accuracy: MagnitudeAccuracy::PWave,
 			epicenter_category: EpicenterCategory::Sea, warning_status: WarningStatus::Forecast,
@@ -29,7 +29,16 @@ fn make_dummy_eew(maximum_intensity: Option<f32>) -> EEW
 	}
 }
 
-fn expect_eew_string(maximum_intensity: Option<IntensityClass>, updown: Diff) -> String
+fn make_cancel_eew() -> EEW
+{
+	EEW {
+		issue_pattern: IssuePattern::Cancel, source: Source::Tokyo, kind: Kind::Cancel,
+		issued_at: UTC.timestamp(12345, 0), occurred_at: UTC.timestamp(12345, 0),
+		id: "ZZZ".to_string(), status: Status::Normal, number: 1, detail: None
+	}
+}
+
+fn expect_normal_eew_string(maximum_intensity: Option<IntensityClass>, updown: Diff) -> String
 {
 	let i_str = match maximum_intensity {
 		None => "震度不明",
@@ -53,74 +62,84 @@ fn expect_eew_string(maximum_intensity: Option<IntensityClass>, updown: Diff) ->
 		updown_str, i_str);
 }
 
-#[test]
-fn it_should_format_with_intensity_same_1()
+fn expect_cancel_eew_string() -> String
 {
-	let eew1 = make_dummy_eew(Some(4.0));
-	let eew2 = make_dummy_eew(Some(4.0));
-	let expected = expect_eew_string(Some(IntensityClass::Four), Diff::Same);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
-
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	"[取消] --- | 第1報 ZZZ".to_string()
 }
 
 #[test]
-fn it_should_format_with_intensity_same_2()
+fn it_should_format_with_intensity_same()
 {
-	let eew1 = make_dummy_eew(Some(4.0));
-	let eew2 = make_dummy_eew(Some(4.0));
-	let expected = expect_eew_string(Some(IntensityClass::Four), Diff::Same);
+	let eew1 = make_normal_eew(Some(IntensityClass::Four));
+	let eew2 = make_normal_eew(Some(IntensityClass::Four));
+	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Same);
 	let result = ja_format_eew_short(&eew2, Some(&eew1));
 
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	assert_eq!(result, Some(expected));
 }
 
 #[test]
-fn it_should_format_with_intensity_up_1()
+fn it_should_format_with_intensity_up()
 {
-	let eew1 = make_dummy_eew(Some(2.0));
-	let eew2 = make_dummy_eew(Some(4.0));
-	let expected = expect_eew_string(Some(IntensityClass::Four), Diff::Up);
+	let eew1 = make_normal_eew(Some(IntensityClass::Zero));
+	let eew2 = make_normal_eew(Some(IntensityClass::Four));
+	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Up);
 	let result = ja_format_eew_short(&eew2, Some(&eew1));
 
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	assert_eq!(result, Some(expected));
 }
 
 #[test]
-fn it_should_format_with_intensity_up_2()
+fn it_should_format_with_intensity_up_from_unknown()
 {
-	let eew1 = make_dummy_eew(None);
-	let eew2 = make_dummy_eew(Some(4.0));
-	let expected = expect_eew_string(Some(IntensityClass::Four), Diff::Up);
+	let eew1 = make_normal_eew(None);
+	let eew2 = make_normal_eew(Some(IntensityClass::Zero));
+	let expected = expect_normal_eew_string(Some(IntensityClass::Zero), Diff::Up);
 	let result = ja_format_eew_short(&eew2, Some(&eew1));
 
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	assert_eq!(result, Some(expected));
 }
 
 #[test]
-fn it_should_format_with_intensity_down_1()
+fn it_should_format_with_intensity_down()
 {
-	let eew1 = make_dummy_eew(Some(4.0));
-	let eew2 = make_dummy_eew(Some(2.0));
-	let expected = expect_eew_string(Some(IntensityClass::Two), Diff::Down);
+	let eew1 = make_normal_eew(Some(IntensityClass::Four));
+	let eew2 = make_normal_eew(Some(IntensityClass::Zero));
+	let expected = expect_normal_eew_string(Some(IntensityClass::Zero), Diff::Down);
 	let result = ja_format_eew_short(&eew2, Some(&eew1));
 
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	assert_eq!(result, Some(expected));
 }
 
 #[test]
-fn it_should_format_with_intensity_down_2()
+fn it_should_format_with_intensity_down_to_unknown()
 {
-	let eew1 = make_dummy_eew(Some(4.0));
-	let eew2 = make_dummy_eew(None);
-	let expected = expect_eew_string(None, Diff::Down);
+	let eew1 = make_normal_eew(Some(IntensityClass::Four));
+	let eew2 = make_normal_eew(None);
+	let expected = expect_normal_eew_string(None, Diff::Down);
 	let result = ja_format_eew_short(&eew2, Some(&eew1));
 
-	assert!(result.is_some());
-	assert_eq!(result.unwrap(), expected);
+	assert_eq!(result, Some(expected));
+}
+
+#[test]
+fn it_should_format_from_normal_to_cancel()
+{
+	let eew1 = make_normal_eew(Some(IntensityClass::Four));
+	let eew2 = make_cancel_eew();
+	let expected = expect_cancel_eew_string();
+	let result = ja_format_eew_short(&eew2, Some(&eew1));
+
+	assert_eq!(result, Some(expected));
+}
+
+#[test]
+fn it_should_format_from_cancel_to_normal()
+{
+	let eew1 = make_cancel_eew();
+	let eew2 = make_normal_eew(Some(IntensityClass::Four));
+	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Same);
+	let result = ja_format_eew_short(&eew2, Some(&eew1));
+
+	assert_eq!(result, Some(expected));
 }

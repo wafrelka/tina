@@ -73,7 +73,7 @@ fn main()
 	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
-	socks.push(EEWSocket::new(Logging::new(eew_logger)));
+	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log".to_string()));
 	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {
@@ -84,7 +84,7 @@ fn main()
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
-			socks.push(EEWSocket::new(tw));
+			socks.push(EEWSocket::new(tw, build_yaml_condition(t.cond.clone()), "Twitter".to_string()));
 			info!("Enabled: Twitter");
 		}
 	}

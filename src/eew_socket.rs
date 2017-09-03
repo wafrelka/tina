@@ -4,8 +4,9 @@ use std::sync::mpsc::{SyncSender, sync_channel};
 use std::sync::Arc;
 
 use eew::EEW;
-use collections::EEWBuffer;
+use collections::{EEWBuffer, EEWBufferError};
 use destination::Destination;
+use condition::Condition;
 
 
 const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;
@@ -16,19 +17,24 @@ pub struct EEWSocket {
 
 impl EEWSocket {
 
-	pub fn new<D>(dest: D) -> EEWSocket where D: Destination + Send + 'static
+	pub fn new<D, C>(dest: D, cond: C, name: String) -> EEWSocket
+		where D: Destination + Send + 'static, C: Condition + Send + 'static
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
 
 		thread::spawn(move || {
 
-			let mut buffer = EEWBuffer::new();
+			let mut buffer = EEWBuffer::new(cond);
 			let mut dest = dest;
 
 			loop {
+
 				let latest = rx.recv().unwrap();
-				if let Some(eews) = buffer.append(latest.clone()) {
-					dest.emit(eews, latest);
+
+				match buffer.append(latest) {
+					Ok(list) => { dest.emit(&list.latest, &list.filtered); },
+					Err(EEWBufferError::Order) => { debug!("{}: EEW Skipped (order)", name) },
+					Err(EEWBufferError::Filter) => { debug!("{}: EEW Skipped (filter)", name); },
 				}
 			}
 		});

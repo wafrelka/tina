@@ -11,6 +11,7 @@ use tina::*;
 fn it_should_format_cancel_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::Cancel,
 		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
@@ -18,7 +19,7 @@ fn it_should_format_cancel_eew()
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
-		detail: EEWDetail::Cancel,
+		detail: None,
 	};
 
 	let expected = "[取消] --- | 第3報 ND20120108133201";
@@ -33,6 +34,7 @@ fn it_should_format_cancel_eew()
 fn it_should_format_low_accuracy_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::IntensityOnly,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 4).and_hms(3, 29, 5),
@@ -40,13 +42,12 @@ fn it_should_format_low_accuracy_eew()
 		id: "ND20130804122902".to_owned(),
 		status: Status::Normal,
 		number: 1,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::IntensityOnly,
+		detail: Some(EEWDetail {
 			epicenter_name: "宮城県沖".to_owned(),
 			epicenter: (38.0, 142.0),
 			depth: Some(10.0),
 			magnitude: Some(5.9),
-			maximum_intensity: Some(4.0),
+			maximum_intensity: Some(IntensityClass::Four),
 			epicenter_accuracy: EpicenterAccuracy::Single,
 			depth_accuracy: DepthAccuracy::Single,
 			magnitude_accuracy: MagnitudeAccuracy::PWave,
@@ -70,6 +71,7 @@ fn it_should_format_low_accuracy_eew()
 fn it_should_format_high_accuracy_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 4).and_hms(3, 29, 5),
@@ -77,8 +79,7 @@ fn it_should_format_high_accuracy_eew()
 		id: "ND20130804122902".to_owned(),
 		status: Status::Correction,
 		number: 2,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::HighAccuracy,
+		detail: Some(EEWDetail {
 			epicenter_name: "宮城県沖".to_owned(),
 			epicenter: (-38.0, -142.0),
 			depth: None,
@@ -107,6 +108,7 @@ fn it_should_format_high_accuracy_eew()
 fn it_should_format_alert_eew_with_high_accuracy()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -114,13 +116,12 @@ fn it_should_format_alert_eew_with_high_accuracy()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Last,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::HighAccuracy,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -144,6 +145,7 @@ fn it_should_format_alert_eew_with_high_accuracy()
 fn it_should_format_alert_eew_with_low_accuracy()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::IntensityOnly,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -151,13 +153,12 @@ fn it_should_format_alert_eew_with_low_accuracy()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Last,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::IntensityOnly,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -181,6 +182,7 @@ fn it_should_format_alert_eew_with_low_accuracy()
 fn it_should_format_test_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::IntensityOnly,
 		source: Source::Tokyo,
 		kind: Kind::Test,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -188,13 +190,12 @@ fn it_should_format_test_eew()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Last,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::IntensityOnly,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -218,6 +219,7 @@ fn it_should_format_test_eew()
 fn it_should_format_reference_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::IntensityOnly,
 		source: Source::Tokyo,
 		kind: Kind::Reference,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -225,13 +227,12 @@ fn it_should_format_reference_eew()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Last,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::IntensityOnly,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -255,6 +256,7 @@ fn it_should_format_reference_eew()
 fn it_should_format_drill_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::IntensityOnly,
 		source: Source::Tokyo,
 		kind: Kind::Drill,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -262,13 +264,12 @@ fn it_should_format_drill_eew()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Last,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::IntensityOnly,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -292,6 +293,7 @@ fn it_should_format_drill_eew()
 fn it_should_format_drill_cancel_eew()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::DrillCancel,
 		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
@@ -299,7 +301,7 @@ fn it_should_format_drill_cancel_eew()
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
-		detail: EEWDetail::Cancel,
+		detail: None,
 	};
 
 	let expected = "[訓練 | 取消] --- | 第3報 ND20120108133201";
@@ -314,6 +316,7 @@ fn it_should_format_drill_cancel_eew()
 fn it_should_fail_to_format_inconsistent_eew_1()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::Test,
 		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
@@ -321,7 +324,7 @@ fn it_should_fail_to_format_inconsistent_eew_1()
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
-		detail: EEWDetail::Cancel,
+		detail: None,
 	};
 
 	let result = ja_format_eew_short(&eew, None);
@@ -333,6 +336,7 @@ fn it_should_fail_to_format_inconsistent_eew_1()
 fn it_should_fail_to_format_inconsistent_eew_2()
 {
 	let eew = EEW {
+		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
@@ -340,7 +344,7 @@ fn it_should_fail_to_format_inconsistent_eew_2()
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
-		detail: EEWDetail::Cancel,
+		detail: None,
 	};
 
 	let result = ja_format_eew_short(&eew, None);

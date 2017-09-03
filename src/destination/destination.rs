@@ -4,5 +4,5 @@ use eew::EEW;
 
 
 pub trait Destination {
-	fn emit(&mut self, eews: &[Arc<EEW>], latest: Arc<EEW>);
+	fn emit(&mut self, latest: &Arc<EEW>, eews: &[Arc<EEW>]);
 }

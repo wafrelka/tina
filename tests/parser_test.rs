@@ -21,6 +21,7 @@ fn it_should_parse_cancel_eew()
 	let area = HashMap::new();
 
 	let expected = EEW {
+		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::Cancel,
 		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
@@ -28,7 +29,7 @@ fn it_should_parse_cancel_eew()
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
-		detail: EEWDetail::Cancel,
+		detail: None,
 	};
 
 	let result = parse_jma_format(telegram, &epicenter, &area);
@@ -50,6 +51,7 @@ fn it_should_parse_normal_eew_01()
 	epicenter.insert(b"287".to_owned(), "宮城県沖".to_owned());
 
 	let expected = EEW {
+		issue_pattern: IssuePattern::LowAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 4).and_hms(3, 29, 5),
@@ -57,13 +59,12 @@ fn it_should_parse_normal_eew_01()
 		id: "ND20130804122902".to_owned(),
 		status: Status::Normal,
 		number: 1,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::LowAccuracy,
+		detail: Some(EEWDetail {
 			epicenter_name: "宮城県沖".to_owned(),
 			epicenter: (38.0, 142.0),
 			depth: Some(10.0),
 			magnitude: Some(5.9),
-			maximum_intensity: Some(4.0),
+			maximum_intensity: Some(IntensityClass::Four),
 			epicenter_accuracy: EpicenterAccuracy::Single,
 			depth_accuracy: DepthAccuracy::Single,
 			magnitude_accuracy: MagnitudeAccuracy::PWave,
@@ -94,6 +95,7 @@ fn it_should_parse_normal_eew_02()
 	epicenter.insert(b"540".to_owned(), "奈良県".to_owned());
 
 	let expected = EEW {
+		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
@@ -101,13 +103,12 @@ fn it_should_parse_normal_eew_02()
 		id: "ND20130808165608".to_owned(),
 		status: Status::Normal,
 		number: 6,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::HighAccuracy,
+		detail: Some(EEWDetail {
 			epicenter_name: "奈良県".to_owned(),
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -154,12 +155,12 @@ fn it_should_parse_ebi_part()
 	area.insert(b"301".to_owned(), "茨城県南部".to_owned());
 
 	let make_areaeew = |area_name: &str, minimum_intensity: f32, maximum_intensity: Option<f32>,
-		reached_at: Option<DateTime<UTC>>, warning: bool, reached: bool|
+		reach_at: Option<DateTime<UTC>>, warning: bool, reached: bool|
 		-> AreaEEW { AreaEEW {
 			area_name: area_name.to_string(),
-			minimum_intensity: minimum_intensity,
-			maximum_intensity: maximum_intensity,
-			reached_at: reached_at,
+			minimum_intensity: IntensityClass::new(minimum_intensity),
+			maximum_intensity: maximum_intensity.map(|i| IntensityClass::new(i)),
+			reach_at: reach_at,
 			warning_status: if warning { WarningStatus::Alert } else { WarningStatus::Forecast },
 			wave_status: if reached { WaveStatus::Reached } else { WaveStatus::Unreached }
 		} };
@@ -185,8 +186,8 @@ fn it_should_parse_ebi_part()
 	assert!(full_result.is_ok());
 
 	let result = match full_result.unwrap().detail {
-		EEWDetail::Full(v) => v.area_info,
-		EEWDetail::Cancel => panic!(),
+		Some(v) => v.area_info,
+		None => panic!(),
 	};
 
 	for (r, e) in result.iter().zip(expected.iter()) {
@@ -209,6 +210,7 @@ fn it_should_parse_eew_with_unknown_values()
 	epicenter.insert(b"432".to_owned(), "岐阜県美濃中西部".to_owned());
 
 	let expected = EEW {
+		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
 		issued_at: UTC.ymd(2016, 6, 10).and_hms(14, 13, 41),
@@ -216,8 +218,7 @@ fn it_should_parse_eew_with_unknown_values()
 		id: "ND20160610231334".to_owned(),
 		status: Status::Normal,
 		number: 1,
-		detail: EEWDetail::Full(FullEEW {
-			issue_pattern: IssuePattern::HighAccuracy,
+		detail: Some(EEWDetail {
 			epicenter_name: "岐阜県美濃中西部".to_owned(),
 			epicenter: (35.4, 136.9),
 			depth: None,

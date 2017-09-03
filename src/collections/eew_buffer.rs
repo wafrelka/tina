@@ -1,83 +1,108 @@
 use std::sync::Arc;
 
 use collections::LimitedQueue;
-use eew::Kind;
-use eew::EEW;
+use eew::{EEW, EEWPhase};
+use condition::Condition;
 
 
 const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
 const INITIAL_BLOCK_CAPACITY: usize = 64;
 
-pub struct EEWBuffer {
-	buffer: LimitedQueue<Vec<Arc<EEW>>>, // each element of buffer must have at least 1 EEW object
+pub enum EEWBufferError {
+	Order,
+	Filter,
 }
 
-impl EEWBuffer {
+pub struct EEWList {
+	pub full: Vec<Arc<EEW>>,
+	pub filtered: Vec<Arc<EEW>>,
+	pub latest: Arc<EEW>,
+	pub id: String,
+}
 
-	pub fn new() -> EEWBuffer
+pub struct EEWBuffer<C> {
+	cond: C,
+	buffer: LimitedQueue<EEWList>,
+}
+
+impl EEWList {
+
+	pub fn new<C>(eew: Arc<EEW>, cond: &C) -> EEWList
+		where C: Condition
 	{
-		EEWBuffer::with_allocation(DEFAULT_MAX_BLOCK_COUNT)
+		let id = eew.id.clone();
+		let mut full = Vec::with_capacity(INITIAL_BLOCK_CAPACITY);
+		let mut filtered = Vec::with_capacity(INITIAL_BLOCK_CAPACITY);
+
+		full.push(eew.clone());
+		if cond.is_satisfied(&eew, &vec!{}) {
+			filtered.push(eew.clone());
+		}
+
+		EEWList { full: full, filtered: filtered, latest: eew, id: id }
 	}
 
-	pub fn with_allocation(limit: usize) -> EEWBuffer
+	pub fn is_acceptable(&self, eew: &EEW) -> bool
+	{
+		if eew.number != self.latest.number {
+			eew.number > self.latest.number
+		} else {
+			let cur_cancel = eew.get_eew_phase() == Some(EEWPhase::Cancel);
+			let prev_cancel = self.latest.get_eew_phase() == Some(EEWPhase::Cancel);
+			cur_cancel && !prev_cancel
+		}
+	}
+
+	pub fn append<C>(&mut self, eew: Arc<EEW>, cond: &C) -> Result<(), EEWBufferError>
+		where C: Condition
+	{
+		let ok = self.is_acceptable(&eew);
+
+		if ok {
+			self.full.push(eew.clone());
+			self.latest = eew.clone();
+			if cond.is_satisfied(&eew, &self.filtered) {
+				self.filtered.push(eew);
+				Ok(())
+			} else {
+				Err(EEWBufferError::Filter)
+			}
+		} else {
+			Err(EEWBufferError::Order)
+		}
+	}
+}
+
+impl<C> EEWBuffer<C> where C: Condition {
+
+	pub fn new(cond: C) -> EEWBuffer<C>
+	{
+		EEWBuffer::with_allocation(cond, DEFAULT_MAX_BLOCK_COUNT)
+	}
+
+	pub fn with_allocation(cond: C, limit: usize) -> EEWBuffer<C>
 	{
 		assert!(limit >= 1);
-		EEWBuffer { buffer: LimitedQueue::with_allocation(limit) }
+		EEWBuffer { cond: cond, buffer: LimitedQueue::with_allocation(limit) }
 	}
 
-	fn lookup(&self, eew_id: &str) -> Option<usize>
+	pub fn append(&mut self, eew: Arc<EEW>) -> Result<&EEWList, EEWBufferError>
 	{
-		self.buffer.iter().position(|block| block.first().map(|eew| eew.id.as_ref()) == Some(eew_id))
-	}
+		let pos = self.buffer.iter().position(|ref block| block.id == eew.id);
 
-	fn is_acceptable(&self, idx: usize, eew: &EEW) -> bool
-	{
-		let block = &self.buffer[idx];
-		let last_eew = block.last().expect("a block must have at least 1 element");
+		if let Some(index) = pos {
 
-		if last_eew.number != eew.number {
-			return last_eew.number < eew.number;
-		}
+			self.buffer[index].append(eew, &self.cond).and(Ok(&self.buffer[index]))
 
-		let is_cancel = |e: &EEW| {
-			match e.kind {
-				Kind::Cancel | Kind::DrillCancel => true,
-				_ => false
-			}
-		};
+		} else {
 
-		return !is_cancel(last_eew) && is_cancel(eew);
-	}
+			self.buffer.push(EEWList::new(eew, &self.cond));
+			let block = self.buffer.back().expect("buffer size must be > 0");
 
-	fn extend_block(&mut self, idx: usize, eew: Arc<EEW>) -> bool
-	{
-		let to_accept = self.is_acceptable(idx, &eew);
-		if to_accept {
-			self.buffer[idx].push(eew);
-		}
-		to_accept
-	}
-
-	fn create_block(&mut self, eew: Arc<EEW>)
-	{
-		let mut v = Vec::with_capacity(INITIAL_BLOCK_CAPACITY);
-		v.push(eew);
-		self.buffer.push(v);
-	}
-
-	pub fn append(&mut self, eew: Arc<EEW>) -> Option<&[Arc<EEW>]>
-	{
-		match self.lookup(&eew.id) {
-
-			Some(idx) => {
-				match self.extend_block(idx, eew) {
-					true => Some(&self.buffer[idx]),
-					false => None
-				}
-			},
-			None => {
-				self.create_block(eew);
-				Some(&self.buffer.back().expect("a buffer must have at least 1 block"))
+			if block.filtered.len() == 0 {
+				Err(EEWBufferError::Filter)
+			} else {
+				Ok(&block)
 			}
 		}
 	}

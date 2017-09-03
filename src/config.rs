@@ -10,6 +10,8 @@ use serde_yaml;
 use serde_yaml::Value;
 use slog::Level;
 
+use tina::{ValueCondition, DisjunctiveCondition, IntensityClass};
+
 
 #[derive(Debug, Clone)]
 pub enum ConfigLoadError {
@@ -61,6 +63,32 @@ pub struct TwitterConfig {
 	pub access_token: String,
 	pub access_secret: String,
 	#[serde(default)] pub in_reply_to_enabled: bool,
+	pub cond: Option<Vec<ValueConditionConfig>>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ValueConditionConfig {
+
+	pub first: Option<bool>,
+	pub succeeding: Option<bool>,
+
+	pub alert: Option<bool>,
+	pub last: Option<bool>,
+	pub cancel: Option<bool>,
+	#[serde(default="def_opt_false")] pub drill: Option<bool>,
+	#[serde(default="def_opt_false")] pub test_or_reference: Option<bool>,
+
+	pub phase_changed: Option<bool>,
+	pub accuracy_changed: Option<bool>,
+
+	pub magnitude_over: Option<f32>,
+	pub intensity_over: Option<f32>,
+
+	pub magnitude_up: Option<f32>,
+	pub magnitude_down: Option<f32>,
+	pub intensity_up: Option<u8>,
+	pub intensity_down: Option<u8>,
 }
 
 #[derive(Debug)]
@@ -70,6 +98,26 @@ pub struct Config {
 	pub wni: WNIConfig,
 	pub twitter: Option<TwitterConfig>,
 	pub log: LogConfig,
+}
+
+impl From<ValueConditionConfig> for ValueCondition {
+
+	fn from(conf: ValueConditionConfig) -> ValueCondition {
+
+		ValueCondition {
+			first: conf.first, succeeding: conf.succeeding, alert: conf.alert, last: conf.last,
+			cancel: conf.cancel, drill: conf.drill, test_or_reference: conf.test_or_reference,
+			phase_changed: conf.phase_changed, accuracy_changed: conf.accuracy_changed,
+			magnitude_over: conf.magnitude_over, intensity_over: conf.intensity_over.map(|i| IntensityClass::new(i)),
+			magnitude_up: conf.magnitude_up, magnitude_down: conf.magnitude_down,
+			intensity_up: conf.intensity_up, intensity_down: conf.intensity_down,
+		}
+	}
+}
+
+pub fn build_yaml_condition(cond: Option<Vec<ValueConditionConfig>>) -> DisjunctiveCondition<ValueCondition>
+{
+	cond.unwrap_or_default().into_iter().map(|v| v.into()).collect::<Vec<ValueCondition>>().into()
 }
 
 fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>
@@ -88,6 +136,9 @@ fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>
 		Ok(Level::Info)
 	}
 }
+
+fn def_opt_false() -> Option<bool> { Some(false) }
+
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
 {

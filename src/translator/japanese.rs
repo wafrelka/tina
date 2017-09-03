@@ -40,21 +40,31 @@ pub fn format_depth(d: Option<f32>) -> String
 	}
 }
 
-pub fn format_intensity(i: IntensityClass) -> String
+pub fn format_intensity(intensity: Option<IntensityClass>) -> String
 {
-	match i {
-		IntensityClass::Unknown => "震度不明",
-		IntensityClass::Zero => "震度0",
-		IntensityClass::One => "震度1",
-		IntensityClass::Two => "震度2",
-		IntensityClass::Three => "震度3",
-		IntensityClass::Four => "震度4",
-		IntensityClass::FiveMinus => "震度5弱",
-		IntensityClass::FivePlus => "震度5強",
-		IntensityClass::SixMinus => "震度6弱",
-		IntensityClass::SixPlus => "震度6強",
-		IntensityClass::Seven => "震度7"
+	match intensity {
+		None => "震度不明",
+		Some(IntensityClass::Zero) => "震度0",
+		Some(IntensityClass::One) => "震度1",
+		Some(IntensityClass::Two) => "震度2",
+		Some(IntensityClass::Three) => "震度3",
+		Some(IntensityClass::Four) => "震度4",
+		Some(IntensityClass::FiveLower) => "震度5弱",
+		Some(IntensityClass::FiveUpper) => "震度5強",
+		Some(IntensityClass::SixLower) => "震度6弱",
+		Some(IntensityClass::SixUpper) => "震度6強",
+		Some(IntensityClass::Seven) => "震度7"
 	}.to_string()
+}
+
+pub fn compare_intensity(l: Option<IntensityClass>, r: Option<IntensityClass>) -> Ordering
+{
+	match (l, r) {
+		(None, None) => Ordering::Equal,
+		(None, _) => Ordering::Less,
+		(_, None) => Ordering::Greater,
+		(Some(lv), Some(rv)) => lv.cmp(&rv),
+	}
 }
 
 pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
@@ -75,8 +85,13 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 	let id = &eew.id;
 	let num_str = format_eew_number(eew);
 
-	let prev_intensity = prev_opt.map(|p| p.get_maximum_intensity_class());
-	let updown = match prev_intensity.map(|i| eew.get_maximum_intensity_class().cmp(&i)) {
+	let prev_detail = prev_opt.and_then(|p| p.detail.as_ref());
+	let comp = prev_detail.and_then(|pd|
+		eew.detail.as_ref().map(|ed|
+			compare_intensity(ed.maximum_intensity, pd.maximum_intensity)
+		)
+	);
+	let updown = match comp {
 		Some(Ordering::Greater) => "↑",
 		Some(Ordering::Less) => "↓",
 		_ => ""
@@ -84,11 +99,11 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 
 	let detail_str = match eew.detail {
 
-		EEWDetail::Cancel => "---".to_string(),
+		None => "---".to_string(),
 
-		EEWDetail::Full(ref detail) => {
+		Some(ref detail) => {
 
-			let intensity = format_intensity(eew.get_maximum_intensity_class());
+			let intensity = format_intensity(detail.maximum_intensity);
 
 			format!("{} {} {} {} ({})",
 				detail.epicenter_name, intensity,

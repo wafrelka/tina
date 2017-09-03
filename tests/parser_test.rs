@@ -64,7 +64,7 @@ fn it_should_parse_normal_eew_01()
 			epicenter: (38.0, 142.0),
 			depth: Some(10.0),
 			magnitude: Some(5.9),
-			maximum_intensity: Some(4.0),
+			maximum_intensity: Some(IntensityClass::Four),
 			epicenter_accuracy: EpicenterAccuracy::Single,
 			depth_accuracy: DepthAccuracy::Single,
 			magnitude_accuracy: MagnitudeAccuracy::PWave,
@@ -108,7 +108,7 @@ fn it_should_parse_normal_eew_02()
 			epicenter: (34.4, 135.7),
 			depth: Some(60.0),
 			magnitude: Some(6.8),
-			maximum_intensity: Some(5.25),
+			maximum_intensity: Some(IntensityClass::FiveUpper),
 			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
 			depth_accuracy: DepthAccuracy::GridSearchLow,
 			magnitude_accuracy: MagnitudeAccuracy::SWave,
@@ -158,8 +158,8 @@ fn it_should_parse_ebi_part()
 		reach_at: Option<DateTime<UTC>>, warning: bool, reached: bool|
 		-> AreaEEW { AreaEEW {
 			area_name: area_name.to_string(),
-			minimum_intensity: minimum_intensity,
-			maximum_intensity: maximum_intensity,
+			minimum_intensity: IntensityClass::new(minimum_intensity),
+			maximum_intensity: maximum_intensity.map(|i| IntensityClass::new(i)),
 			reach_at: reach_at,
 			warning_status: if warning { WarningStatus::Alert } else { WarningStatus::Forecast },
 			wave_status: if reached { WaveStatus::Reached } else { WaveStatus::Unreached }

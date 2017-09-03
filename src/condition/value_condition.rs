@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eew::{EEW, EEWPhase, Kind, EEWDetail};
+use eew::{EEW, EEWPhase, Kind, EEWDetail, IntensityClass};
 use condition::Condition;
 
 
@@ -19,12 +19,12 @@ pub struct ValueCondition {
 	pub accuracy_changed: Option<bool>,
 
 	pub magnitude_over: Option<f32>,
-	pub intensity_over: Option<f32>,
+	pub intensity_over: Option<IntensityClass>,
 
 	pub magnitude_up: Option<f32>,
 	pub magnitude_down: Option<f32>,
-	pub intensity_up: Option<f32>,
-	pub intensity_down: Option<f32>,
+	pub intensity_up: Option<u8>,
+	pub intensity_down: Option<u8>,
 }
 
 fn test_bool(expected: Option<bool>, actual: bool) -> bool
@@ -99,16 +99,19 @@ impl Condition for ValueCondition {
 					_ => false
 				}),
 			test_with_prev_detail(self.intensity_up, latest, prev,
-				|v, latest, prev| match (latest.maximum_intensity, prev.maximum_intensity) {
-					(Some(x), Some(y)) => (x - y) > v,
-					_ => false
+				|v, latest, prev| {
+					let l_v = latest.maximum_intensity.map_or(-1, |i| i.ord());
+					let p_v = prev.maximum_intensity.map_or(-1, |i| i.ord());
+					let diff = l_v - p_v;
+					diff >= v as i32
 				}),
 			test_with_prev_detail(self.intensity_down, latest, prev,
-				|v, latest, prev| match (latest.maximum_intensity, prev.maximum_intensity) {
-					(Some(x), Some(y)) => (y - x) > v,
-					_ => false
+				|v, latest, prev| {
+					let l_v = latest.maximum_intensity.map_or(-1, |i| i.ord());
+					let p_v = prev.maximum_intensity.map_or(-1, |i| i.ord());
+					let diff = p_v - l_v;
+					diff >= v as i32
 				}),
-
 		];
 
 		simple_conds.into_iter().all(|&v| v) && comp_conds.into_iter().all(|&v| v)

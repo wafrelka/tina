@@ -10,7 +10,7 @@ use serde_yaml;
 use serde_yaml::Value;
 use slog::Level;
 
-use tina::{ValueCondition, DisjunctiveCondition};
+use tina::{ValueCondition, DisjunctiveCondition, IntensityClass};
 
 
 #[derive(Debug, Clone)]
@@ -87,8 +87,8 @@ pub struct ValueConditionConfig {
 
 	pub magnitude_up: Option<f32>,
 	pub magnitude_down: Option<f32>,
-	pub intensity_up: Option<f32>,
-	pub intensity_down: Option<f32>,
+	pub intensity_up: Option<u8>,
+	pub intensity_down: Option<u8>,
 }
 
 #[derive(Debug)]
@@ -108,7 +108,7 @@ impl From<ValueConditionConfig> for ValueCondition {
 			first: conf.first, succeeding: conf.succeeding, alert: conf.alert, last: conf.last,
 			cancel: conf.cancel, drill: conf.drill, test_or_reference: conf.test_or_reference,
 			phase_changed: conf.phase_changed, accuracy_changed: conf.accuracy_changed,
-			magnitude_over: conf.magnitude_over, intensity_over: conf.intensity_over,
+			magnitude_over: conf.magnitude_over, intensity_over: conf.intensity_over.map(|i| IntensityClass::new(i)),
 			magnitude_up: conf.magnitude_up, magnitude_down: conf.magnitude_down,
 			intensity_up: conf.intensity_up, intensity_down: conf.intensity_down,
 		}

@@ -54,18 +54,18 @@ fn parse_number(number_text: &[u8]) -> Option<u32>
 	)
 }
 
-fn parse_intensity(intensity_text: &[u8]) -> Option<f32>
+fn parse_intensity(intensity_text: &[u8]) -> Option<IntensityClass>
 {
 	match intensity_text {
-		b"01" => Some(1.0),
-		b"02" => Some(2.0),
-		b"03" => Some(3.0),
-		b"04" => Some(4.0),
-		b"5-" => Some(4.75),
-		b"5+" => Some(5.25),
-		b"6-" => Some(5.75),
-		b"6+" => Some(6.25),
-		b"07" => Some(7.0),
+		b"01" => Some(IntensityClass::One),
+		b"02" => Some(IntensityClass::Two),
+		b"03" => Some(IntensityClass::Three),
+		b"04" => Some(IntensityClass::Four),
+		b"5-" => Some(IntensityClass::FiveLower),
+		b"5+" => Some(IntensityClass::FiveUpper),
+		b"6-" => Some(IntensityClass::SixLower),
+		b"6+" => Some(IntensityClass::SixUpper),
+		b"07" => Some(IntensityClass::Seven),
 		_ => None
 	}
 }

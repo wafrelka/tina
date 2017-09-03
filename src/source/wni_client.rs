@@ -47,7 +47,7 @@ fn from_data_to_string(raw: &[u8]) -> String
 	let mut s = String::with_capacity(raw.len() + ADDITIONAL_CAPACITY_FOR_HEX_ENCODING);
 
 	for c in raw.iter() {
-		if c.is_ascii() {
+		if c.is_ascii() && *c != b'\\' {
 			s.push(*c as char);
 		} else {
 			s.push_str(&format!("\\x{:02x}", c));

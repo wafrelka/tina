@@ -67,13 +67,13 @@ fn test_with_prev_detail<V, F>(expected: Option<V>, latest: &Arc<EEW>, prev: Opt
 
 impl Condition for ValueCondition {
 
-	fn is_satisfied(&self, latest: &Arc<EEW>, eews: &[Arc<EEW>]) -> bool
+	fn is_satisfied(&self, latest: &Arc<EEW>, prevs: &[Arc<EEW>]) -> bool
 	{
-		let prev = eews.iter().rev().nth(1);
+		let prev = prevs.iter().last();
 
 		let simple_conds = [
-			test_bool(self.first, eews.len() <= 1),
-			test_bool(self.succeeding, eews.len() >= 2),
+			test_bool(self.first, prevs.len() <= 0),
+			test_bool(self.succeeding, prevs.len() >= 1),
 			test_bool(self.alert, latest.get_eew_phase() == Some(EEWPhase::Alert)),
 			test_bool(self.last, latest.is_last()),
 			test_bool(self.cancel, latest.get_eew_phase() == Some(EEWPhase::Cancel)),

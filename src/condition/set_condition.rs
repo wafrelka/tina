@@ -18,14 +18,14 @@ impl<C> DisjunctiveCondition<C> {
 
 impl<C> Condition for DisjunctiveCondition<C> where C: Condition {
 
-	fn is_satisfied(&self, latest: &Arc<EEW>, eews: &[Arc<EEW>]) -> bool
+	fn is_satisfied(&self, latest: &Arc<EEW>, prevs: &[Arc<EEW>]) -> bool
 	{
-		self.clauses.iter().any(|c| c.is_satisfied(latest, eews))
+		self.clauses.iter().any(|c| c.is_satisfied(latest, prevs))
 	}
 }
 
 impl<C> From<Vec<C>> for DisjunctiveCondition<C> {
-	
+
 	fn from(clauses: Vec<C>) -> DisjunctiveCondition<C>
 	{
 		DisjunctiveCondition::new(clauses)

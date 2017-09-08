@@ -8,7 +8,7 @@ pub enum IssuePattern { Cancel, IntensityOnly, LowAccuracy, HighAccuracy }
 pub enum Source { Tokyo, Osaka }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Test }
+pub enum Kind { Normal, Drill, Cancel, DrillCancel, Reference, Trial }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Status { Normal, Correction, CancelCorrection, LastWithCorrection, Last, Unknown }

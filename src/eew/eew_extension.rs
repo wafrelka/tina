@@ -17,7 +17,7 @@ impl EEW {
 
 			Kind::Cancel | Kind::DrillCancel => Some(EEWPhase::Cancel),
 
-			Kind::Normal | Kind::Drill | Kind::Reference | Kind::Test => {
+			Kind::Normal | Kind::Drill | Kind::Reference | Kind::Trial => {
 
 				match self.detail.as_ref().map(|d| d.warning_status) {
 					Some(WarningStatus::Alert) => Some(EEWPhase::Alert),
@@ -54,6 +54,6 @@ impl EEW {
 
 	pub fn is_test(&self) -> bool
 	{
-		self.kind == Kind::Reference || self.kind == Kind::Test
+		self.kind == Kind::Reference || self.kind == Kind::Trial
 	}
 }

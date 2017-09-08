@@ -120,7 +120,7 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 	let last_str = if eew.is_last() { "/最終" } else { "" };
 	let kind_str = match eew.kind {
 		Kind::Reference => "参考情報 | ",
-		Kind::Test => "テスト配信 | ",
+		Kind::Trial => "テスト配信 | ",
 		Kind::Drill => "訓練 | ",
 		_ => ""
 	};

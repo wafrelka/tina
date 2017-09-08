@@ -120,7 +120,7 @@ pub fn parse_jma_format(text: &[u8],
 		b"10" => Kind::Cancel,
 		b"11" => Kind::DrillCancel,
 		b"20" => Kind::Reference,
-		b"30" => Kind::Test,
+		b"30" => Kind::Trial,
 		_ => return Err(JMAFormatParseError::InvalidKind)
 	};
 

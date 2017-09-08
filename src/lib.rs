@@ -9,6 +9,10 @@ extern crate rand;
 #[macro_use] extern crate slog;
 #[macro_use] extern crate slog_scope;
 
+macro_rules! write_unwrap {
+	($dst:expr, $($arg:tt)*) => (write!($dst, $($arg)*).unwrap())
+}
+
 mod eew;
 mod parser;
 mod eew_socket;

@@ -4,6 +4,7 @@ use eew::*;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum EEWPhase {
 	Cancel,
+	FastForecast,
 	Forecast,
 	Alert
 }
@@ -16,11 +17,17 @@ impl EEW {
 
 			Kind::Cancel | Kind::DrillCancel => Some(EEWPhase::Cancel),
 
-			Kind::Normal | Kind::Drill | Kind::Reference | Kind::Test => {
+			Kind::Normal | Kind::Drill | Kind::Reference | Kind::Trial => {
 
 				match self.detail.as_ref().map(|d| d.warning_status) {
 					Some(WarningStatus::Alert) => Some(EEWPhase::Alert),
-					Some(WarningStatus::Forecast) => Some(EEWPhase::Forecast),
+					Some(WarningStatus::Forecast) => {
+						match self.issue_pattern {
+							IssuePattern::IntensityOnly => Some(EEWPhase::FastForecast),
+							IssuePattern::LowAccuracy | IssuePattern::HighAccuracy => Some(EEWPhase::Forecast),
+							_ => None,
+						}
+					}
 					_ => None,
 				}
 			}
@@ -43,5 +50,10 @@ impl EEW {
 	pub fn is_drill(&self) -> bool
 	{
 		self.kind == Kind::Drill || self.kind == Kind::DrillCancel
+	}
+
+	pub fn is_test(&self) -> bool
+	{
+		self.kind == Kind::Reference || self.kind == Kind::Trial
 	}
 }

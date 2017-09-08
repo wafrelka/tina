@@ -75,7 +75,12 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 		_ => {}
 	}
 
-	let head = match (eew.get_eew_phase(), eew.is_high_accuracy()) {
+	let reliable = match eew.issue_pattern {
+		IssuePattern::LowAccuracy | IssuePattern::HighAccuracy => true,
+		_ => false,
+	};
+
+	let head = match (eew.get_eew_phase(), reliable) {
 		(Some(EEWPhase::Forecast), true) => "予報",
 		(Some(EEWPhase::Forecast), false) => "速報",
 		(Some(EEWPhase::Alert), _) => "警報",

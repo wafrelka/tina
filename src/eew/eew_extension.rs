@@ -4,6 +4,7 @@ use eew::*;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum EEWPhase {
 	Cancel,
+	FastForecast,
 	Forecast,
 	Alert
 }
@@ -20,7 +21,13 @@ impl EEW {
 
 				match self.detail.as_ref().map(|d| d.warning_status) {
 					Some(WarningStatus::Alert) => Some(EEWPhase::Alert),
-					Some(WarningStatus::Forecast) => Some(EEWPhase::Forecast),
+					Some(WarningStatus::Forecast) => {
+						match self.issue_pattern {
+							IssuePattern::IntensityOnly => Some(EEWPhase::FastForecast),
+							IssuePattern::LowAccuracy | IssuePattern::HighAccuracy => Some(EEWPhase::Forecast),
+							_ => None,
+						}
+					}
 					_ => None,
 				}
 			}

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eew::{EEW, EEWPhase, Kind, EEWDetail, IntensityClass};
+use eew::{EEW, EEWPhase, EEWDetail, IntensityClass};
 use condition::Condition;
 
 
@@ -13,7 +13,7 @@ pub struct ValueCondition {
 	pub last: Option<bool>,
 	pub cancel: Option<bool>,
 	pub drill: Option<bool>,
-	pub test_or_reference: Option<bool>,
+	pub test: Option<bool>,
 
 	pub phase_changed: Option<bool>,
 	pub accuracy_changed: Option<bool>,
@@ -78,7 +78,7 @@ impl Condition for ValueCondition {
 			test_bool(self.last, latest.is_last()),
 			test_bool(self.cancel, latest.get_eew_phase() == Some(EEWPhase::Cancel)),
 			test_bool(self.drill, latest.is_drill()),
-			test_bool(self.test_or_reference, latest.kind == Kind::Test || latest.kind == Kind::Reference),
+			test_bool(self.test, latest.is_test()),
 			test_detail(self.magnitude_over, latest, |v, detail| detail.magnitude.map_or(false, |m| m >= v)),
 			test_detail(self.intensity_over, latest, |v, detail| detail.maximum_intensity.map_or(false, |m| m >= v)),
 		];

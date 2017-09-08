@@ -51,4 +51,9 @@ impl EEW {
 	{
 		self.kind == Kind::Drill || self.kind == Kind::DrillCancel
 	}
+
+	pub fn is_test(&self) -> bool
+	{
+		self.kind == Kind::Reference || self.kind == Kind::Test
+	}
 }

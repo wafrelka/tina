@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::Write;
 
 use chrono::*;
 
@@ -10,11 +11,6 @@ pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const TIME_FORMAT: &'static str = "%H:%M:%S";
 	dt.with_timezone(&jst).format(TIME_FORMAT)
-}
-
-pub fn format_eew_number(eew: &EEW) -> String
-{
-	format!("第{}報", eew.number)
 }
 
 pub fn format_position(pos: (f32, f32)) -> String
@@ -57,9 +53,18 @@ pub fn format_intensity(intensity: Option<IntensityClass>) -> String
 	}.to_string()
 }
 
-pub fn compare_intensity(l: Option<IntensityClass>, r: Option<IntensityClass>) -> Ordering
+pub fn compare_intensity(eew: &EEW, prev_opt: Option<&EEW>) -> Ordering
 {
-	match (l, r) {
+	let prev_detail_opt = prev_opt.and_then(|p| p.detail.as_ref());
+
+	if eew.detail.is_none() || prev_detail_opt.is_none() {
+		return Ordering::Equal;
+	}
+
+	let detail = eew.detail.as_ref().unwrap();
+	let prev_detail = prev_detail_opt.unwrap();
+
+	match (detail.maximum_intensity, prev_detail.maximum_intensity) {
 		(None, None) => Ordering::Equal,
 		(None, _) => Ordering::Less,
 		(_, None) => Ordering::Greater,
@@ -69,64 +74,52 @@ pub fn compare_intensity(l: Option<IntensityClass>, r: Option<IntensityClass>) -
 
 pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 {
-	match eew.kind {
-		Kind::Cancel => return Some(format!("[取消] --- | {} {}", format_eew_number(eew), eew.id)),
-		Kind::DrillCancel => return Some(format!("[訓練 | 取消] --- | {} {}", format_eew_number(eew), eew.id)),
-		_ => {}
+	let mut header = String::new();
+	let mut body = String::new();
+	let mut footer = String::new();
+
+	if eew.is_test() {
+		header += "テスト配信 | ";
 	}
 
-	let reliable = match eew.issue_pattern {
-		IssuePattern::LowAccuracy | IssuePattern::HighAccuracy => true,
-		_ => false,
+	if eew.is_drill() {
+		header += "訓練 | ";
+	}
+
+	let title = match eew.get_eew_phase() {
+		Some(EEWPhase::Cancel) => "取消",
+		Some(EEWPhase::FastForecast) => "速報",
+		Some(EEWPhase::Forecast) => "予報",
+		Some(EEWPhase::Alert) => "警報",
+		_ => return None,
 	};
+	header += title;
 
-	let head = match (eew.get_eew_phase(), reliable) {
-		(Some(EEWPhase::Forecast), true) => "予報",
-		(Some(EEWPhase::Forecast), false) => "速報",
-		(Some(EEWPhase::Alert), _) => "警報",
-		_ => return None
+	let updown = match compare_intensity(eew, prev_opt) {
+		Ordering::Greater => "↑",
+		Ordering::Less => "↓",
+		Ordering::Equal => "",
 	};
+	header += updown;
 
-	let id = &eew.id;
-	let num_str = format_eew_number(eew);
+	if eew.is_last() {
+		header += "/最終";
+	}
 
-	let prev_detail = prev_opt.and_then(|p| p.detail.as_ref());
-	let comp = prev_detail.and_then(|pd|
-		eew.detail.as_ref().map(|ed|
-			compare_intensity(ed.maximum_intensity, pd.maximum_intensity)
-		)
-	);
-	let updown = match comp {
-		Some(Ordering::Greater) => "↑",
-		Some(Ordering::Less) => "↓",
-		_ => ""
-	};
+	match eew.detail {
 
-	let detail_str = match eew.detail {
-
-		None => "---".to_string(),
+		None => { body += "---" },
 
 		Some(ref detail) => {
 
-			let intensity = format_intensity(detail.maximum_intensity);
-
-			format!("{} {} {} {} ({})",
-				detail.epicenter_name, intensity,
+			write_unwrap!(&mut body, "{} {} {} {} ({}) {}発生",
+				detail.epicenter_name, format_intensity(detail.maximum_intensity),
 				format_magnitude(detail.magnitude), format_depth(detail.depth),
-				format_position(detail.epicenter))
-		}
-	};
+				format_position(detail.epicenter), format_time(&eew.occurred_at));
+		},
+	}
 
-	let last_str = if eew.is_last() { "/最終" } else { "" };
-	let kind_str = match eew.kind {
-		Kind::Reference => "参考情報 | ",
-		Kind::Trial => "テスト配信 | ",
-		Kind::Drill => "訓練 | ",
-		_ => ""
-	};
+	write_unwrap!(&mut footer, "第{}報 {}", eew.number, eew.id);
 
-	let s = format!("[{}{}{}{}] {} {}発生 | {} {}",
-		kind_str, head, updown, last_str, detail_str, format_time(&eew.occurred_at), num_str, id);
-
-	return Some(s);
+	return Some(format!("[{}] {} | {}", header, body, footer));
 }

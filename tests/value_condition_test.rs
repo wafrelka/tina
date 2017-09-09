@@ -10,8 +10,8 @@ use eew_builder::*;
 
 const DEF_COND: ValueCondition = ValueCondition {
 	first: None, succeeding: None, alert: None, last: None, cancel: None, drill: None, test: None,
-	phase_changed: None, accuracy_changed: None, magnitude_over: None, intensity_over: None,
-	magnitude_up: None, magnitude_down: None, intensity_up: None, intensity_down: None,
+	phase_changed: None, magnitude_over: None, intensity_over: None,
+	intensity_up: None, intensity_down: None,
 };
 
 fn check(cond: &Condition, cur: &Arc<EEW>, prev: Option<&Arc<EEW>>) -> bool
@@ -119,18 +119,6 @@ fn it_should_handle_intensity_over_condition()
 	assert_eq!(check(&cond, &i_none_eew, None), false);
 	assert_eq!(check(&cond, &bad_eew, None), false);
 	assert_eq!(check(&cond, &good_eew, None), true);
-}
-
-#[test]
-fn it_should_handle_magnitude_up_condition()
-{
-	// TODO: implement test
-}
-
-#[test]
-fn it_should_handle_magnitude_down_condition()
-{
-	// TODO: implement test
 }
 
 #[test]

@@ -88,13 +88,10 @@ pub struct ValueConditionConfig {
 	#[serde(default="def_opt_false")] pub test: Option<bool>,
 
 	pub phase_changed: Option<bool>,
-	pub accuracy_changed: Option<bool>,
 
 	pub magnitude_over: Option<f32>,
 	pub intensity_over: Option<f32>,
 
-	pub magnitude_up: Option<f32>,
-	pub magnitude_down: Option<f32>,
 	pub intensity_up: Option<u8>,
 	pub intensity_down: Option<u8>,
 }
@@ -116,9 +113,9 @@ impl From<ValueConditionConfig> for ValueCondition {
 		ValueCondition {
 			first: conf.first, succeeding: conf.succeeding, alert: conf.alert, last: conf.last,
 			cancel: conf.cancel, drill: conf.drill, test: conf.test,
-			phase_changed: conf.phase_changed, accuracy_changed: conf.accuracy_changed,
-			magnitude_over: conf.magnitude_over, intensity_over: conf.intensity_over.map(|i| IntensityClass::new(i)),
-			magnitude_up: conf.magnitude_up, magnitude_down: conf.magnitude_down,
+			phase_changed: conf.phase_changed,
+			magnitude_over: conf.magnitude_over,
+			intensity_over: conf.intensity_over.map(|i| IntensityClass::new(i)),
 			intensity_up: conf.intensity_up, intensity_down: conf.intensity_down,
 		}
 	}

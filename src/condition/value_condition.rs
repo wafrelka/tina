@@ -100,17 +100,17 @@ impl Condition for ValueCondition {
 				}),
 			test_with_prev_detail(self.intensity_up, latest, prev,
 				|v, latest, prev| {
-					let l_v = latest.maximum_intensity.map_or(-1, |i| i.ord());
-					let p_v = prev.maximum_intensity.map_or(-1, |i| i.ord());
+					let l_v = latest.maximum_intensity.map_or(-1, |i| i as i32);
+					let p_v = prev.maximum_intensity.map_or(-1, |i| i as i32);
 					let diff = l_v - p_v;
-					diff >= v as i32
+					diff >= (v as i32)
 				}),
 			test_with_prev_detail(self.intensity_down, latest, prev,
 				|v, latest, prev| {
-					let l_v = latest.maximum_intensity.map_or(-1, |i| i.ord());
-					let p_v = prev.maximum_intensity.map_or(-1, |i| i.ord());
+					let l_v = latest.maximum_intensity.map_or(-1, |i| i as i32);
+					let p_v = prev.maximum_intensity.map_or(-1, |i| i as i32);
 					let diff = p_v - l_v;
-					diff >= v as i32
+					diff >= (v as i32)
 				}),
 		];
 

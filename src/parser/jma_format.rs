@@ -6,7 +6,7 @@ use chrono::*;
 use eew::*;
 
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum JMAFormatParseError {
 	TooShort,
 	Split,

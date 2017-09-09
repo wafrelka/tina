@@ -73,7 +73,7 @@ fn main()
 	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
-	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log".to_string()));
+	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));
 	info!("Enabled: EEW Logging");
 
 	if conf.twitter.is_some() {
@@ -84,7 +84,11 @@ fn main()
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
-			socks.push(EEWSocket::new(tw, build_yaml_condition(t.cond.clone()), "Twitter".to_string()));
+			let s = match t.cond {
+				Some(ref v) => EEWSocket::new(tw, build_yaml_condition(v.clone()), "Twitter"),
+				None => EEWSocket::new(tw, TRUE_CONDITION, "Twitter"),
+			};
+			socks.push(s);
 			info!("Enabled: Twitter");
 		}
 	}
@@ -93,7 +97,11 @@ fn main()
 		let s = &conf.slack.unwrap();
 		match Slack::build(&s.webhook_url) {
 			Ok(sl) => {
-				socks.push(EEWSocket::new(sl, build_yaml_condition(s.cond.clone()), "Slack".to_string()));
+				let s = match s.cond {
+					Some(ref v) => EEWSocket::new(sl, build_yaml_condition(v.clone()), "Slack"),
+					None => EEWSocket::new(sl, TRUE_CONDITION, "Slack"),
+				};
+				socks.push(s);
 				info!("Enabled: Slack");
 			},
 			Err(_) => {

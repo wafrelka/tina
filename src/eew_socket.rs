@@ -17,10 +17,11 @@ pub struct EEWSocket {
 
 impl EEWSocket {
 
-	pub fn new<D, C>(dest: D, cond: C, name: String) -> EEWSocket
-		where D: Destination + Send + 'static, C: Condition + Send + 'static
+	pub fn new<D, C, S>(dest: D, cond: C, name: S) -> EEWSocket
+		where D: Destination + Send + 'static, C: Condition + Send + 'static, S: Into<String>
 	{
 		let (tx, rx) = sync_channel::<Arc<EEW>>(DEFAULT_MAX_CHANNEL_SIZE);
+		let name = name.into();
 
 		thread::spawn(move || {
 

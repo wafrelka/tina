@@ -67,22 +67,6 @@ impl IntensityClass {
 			_ => IntensityClass::Seven,
 		}
 	}
-
-	pub fn ord(&self) -> i32
-	{
-		match *self {
-			IntensityClass::Zero => 0,
-			IntensityClass::One => 1,
-			IntensityClass::Two => 2,
-			IntensityClass::Three => 3,
-			IntensityClass::Four => 4,
-			IntensityClass::FiveLower => 5,
-			IntensityClass::FiveUpper => 6,
-			IntensityClass::SixLower => 7,
-			IntensityClass::SixUpper => 8,
-			IntensityClass::Seven => 9,
-		}
-	}
 }
 
 #[derive(PartialEq, Debug, Clone)]

@@ -1,10 +1,11 @@
-#![cfg(test)]
-
 extern crate chrono;
 extern crate tina;
 
 use chrono::*;
 use tina::*;
+
+mod eew_builder;
+use eew_builder::*;
 
 
 struct MiniEEW {
@@ -59,16 +60,15 @@ impl From<MiniEEWDetail> for EEWDetail {
 #[test]
 fn it_should_format_cancel_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::Cancel,
-		kind: Kind::Cancel,
-		status: Status::Normal,
-		detail: None,
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::Cancel)
+		.kind(Kind::Cancel)
+		.detail_none()
+		.build();
 
-	let expected = "[取消] --- | 第10報 ND20100101005559".to_owned();
+	let expected = "[取消] --- | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -76,22 +76,15 @@ fn it_should_format_cancel_eew()
 #[test]
 fn it_should_format_intensity_only_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::IntensityOnly,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: None,
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Forecast,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::IntensityOnly)
+		.magnitude(None)
+		.build();
 
 	let expected =
-		"[速報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[速報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -99,22 +92,14 @@ fn it_should_format_intensity_only_eew()
 #[test]
 fn it_should_format_low_accuracy_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::LowAccuracy,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Forecast,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::LowAccuracy)
+		.build();
 
 	let expected =
-		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -122,22 +107,13 @@ fn it_should_format_low_accuracy_eew()
 #[test]
 fn it_should_format_high_accuracy_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Forecast,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.build();
 
 	let expected =
-		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -145,22 +121,16 @@ fn it_should_format_high_accuracy_eew()
 #[test]
 fn it_should_format_alert_eew_with_intensity_only()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::IntensityOnly,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: None,
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::IntensityOnly)
+		.magnitude(None)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -168,22 +138,15 @@ fn it_should_format_alert_eew_with_intensity_only()
 #[test]
 fn it_should_format_alert_eew_with_low_accuracy()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::LowAccuracy,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::LowAccuracy)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -192,22 +155,15 @@ fn it_should_format_alert_eew_with_low_accuracy()
 #[test]
 fn it_should_format_alert_eew_with_high_accuracy()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.issue_pattern(IssuePattern::HighAccuracy)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -215,22 +171,15 @@ fn it_should_format_alert_eew_with_high_accuracy()
 #[test]
 fn it_should_format_last_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::Last,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.status(Status::Last)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -238,22 +187,15 @@ fn it_should_format_last_eew()
 #[test]
 fn it_should_format_last_with_correction_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::LastWithCorrection,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.status(Status::LastWithCorrection)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -261,22 +203,15 @@ fn it_should_format_last_with_correction_eew()
 #[test]
 fn it_should_format_correction_eew()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::Correction,
-		detail: Some(MiniEEWDetail {
-			depth: Some(10.0),
-			magnitude: Some(5.9),
-			maximum_intensity: Some(IntensityClass::FiveLower),
-			warning_status: WarningStatus::Alert,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.status(Status::Correction)
+		.warning_status(WarningStatus::Alert)
+		.build();
 
 	let expected =
-		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -284,22 +219,16 @@ fn it_should_format_correction_eew()
 #[test]
 fn it_should_format_eew_with_unknown_values()
 {
-	let eew = MiniEEW {
-		issue_pattern: IssuePattern::HighAccuracy,
-		kind: Kind::Normal,
-		status: Status::Normal,
-		detail: Some(MiniEEWDetail {
-			depth: None,
-			magnitude: None,
-			maximum_intensity: None,
-			warning_status: WarningStatus::Forecast,
-		}),
-	};
+	let eew = EEWBuilder::new()
+		.depth(None)
+		.magnitude(None)
+		.maximum_intensity(None)
+		.build();
 
 	let expected =
-		"[予報] 奈良県 震度不明 M--- ---km (N34.4/E135.7) 09:55:59発生 | 第10報 ND20100101005559".to_owned();
+		"[予報] 奈良県 震度不明 M--- ---km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew.into(), None);
+	let result = ja_format_eew_short(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }

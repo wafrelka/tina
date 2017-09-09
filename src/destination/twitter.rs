@@ -10,20 +10,20 @@ use translator::ja_format_eew_short;
 pub struct Twitter {
 	client: TwitterClient,
 	latest_tw_ids: LimitedQueue<(String, u64)>,
-	reply_enabled: bool
+	reply_enabled: bool,
+	updown_enabled: bool,
 }
 
 impl Twitter {
 
 	pub fn new(consumer_key: String, consumer_secret: String,
-		access_key: String, access_secret: String, reply_enabled: bool) -> Twitter
+		access_key: String, access_secret: String, reply_enabled: bool, updown_enabled: bool) -> Twitter
 	{
 		let client = TwitterClient::new(consumer_key, consumer_secret, access_key, access_secret);
 		let q = LimitedQueue::new(16);
 
-		let tw = Twitter { client: client, latest_tw_ids: q, reply_enabled: reply_enabled };
-
-		tw
+		Twitter { client: client, latest_tw_ids: q,
+			reply_enabled: reply_enabled, updown_enabled: updown_enabled }
 	}
 
 	pub fn is_valid(&self) -> bool
@@ -36,7 +36,12 @@ impl Destination for Twitter {
 
 	fn emit(&mut self, latest: &Arc<EEW>, eews: &[Arc<EEW>])
 	{
-		let out = match ja_format_eew_short(&latest, eews.iter().rev().nth(1).map(|e| e.as_ref())) {
+		let prev_eew = match self.updown_enabled {
+			true => eews.iter().rev().nth(1).map(|e| e.as_ref()),
+			false => None,
+		};
+
+		let out = match ja_format_eew_short(&latest, prev_eew) {
 			Some(out) => out,
 			None => return
 		};

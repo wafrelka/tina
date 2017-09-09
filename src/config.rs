@@ -64,6 +64,7 @@ pub struct TwitterConfig {
 	pub access_token: String,
 	pub access_secret: String,
 	#[serde(default)] pub in_reply_to_enabled: bool,
+	#[serde(default)] pub updown_enabled: bool,
 	pub cond: Option<Vec<ValueConditionConfig>>,
 }
 
@@ -71,6 +72,7 @@ pub struct TwitterConfig {
 #[serde(deny_unknown_fields)]
 pub struct SlackConfig {
 	pub webhook_url: String,
+	#[serde(default)] pub updown_enabled: bool,
 	pub cond: Option<Vec<ValueConditionConfig>>,
 }
 

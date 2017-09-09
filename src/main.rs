@@ -80,7 +80,7 @@ fn main()
 		let t = &conf.twitter.unwrap();
 		let tw = Twitter::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
-			t.access_token.clone(), t.access_secret.clone(), t.in_reply_to_enabled);
+			t.access_token.clone(), t.access_secret.clone(), t.in_reply_to_enabled, t.updown_enabled);
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
@@ -95,7 +95,7 @@ fn main()
 
 	if conf.slack.is_some() {
 		let s = &conf.slack.unwrap();
-		match Slack::build(&s.webhook_url) {
+		match Slack::build(&s.webhook_url, s.updown_enabled) {
 			Ok(sl) => {
 				let s = match s.cond {
 					Some(ref v) => EEWSocket::new(sl, build_yaml_condition(v.clone()), "Slack"),

@@ -121,9 +121,9 @@ impl From<ValueConditionConfig> for ValueCondition {
 	}
 }
 
-pub fn build_yaml_condition(cond: Option<Vec<ValueConditionConfig>>) -> DisjunctiveCondition<ValueCondition>
+pub fn build_yaml_condition(v: Vec<ValueConditionConfig>) -> DisjunctiveCondition<ValueCondition>
 {
-	cond.unwrap_or_default().into_iter().map(|v| v.into()).collect::<Vec<ValueCondition>>().into()
+	v.into_iter().map(|vc| vc.into()).collect::<Vec<ValueCondition>>().into()
 }
 
 fn deserialize_log_level<'d, D>(deserializer: D) -> Result<Level, D::Error>

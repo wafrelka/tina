@@ -84,7 +84,11 @@ fn main()
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
-			socks.push(EEWSocket::new(tw, build_yaml_condition(t.cond.clone()), "Twitter".to_string()));
+			let s = match t.cond {
+				Some(ref v) => EEWSocket::new(tw, build_yaml_condition(v.clone()), "Twitter".to_string()),
+				None => EEWSocket::new(tw, TRUE_CONDITION, "Twitter".to_string()),
+			};
+			socks.push(s);
 			info!("Enabled: Twitter");
 		}
 	}
@@ -93,7 +97,11 @@ fn main()
 		let s = &conf.slack.unwrap();
 		match Slack::build(&s.webhook_url) {
 			Ok(sl) => {
-				socks.push(EEWSocket::new(sl, build_yaml_condition(s.cond.clone()), "Slack".to_string()));
+				let s = match s.cond {
+					Some(ref v) => EEWSocket::new(sl, build_yaml_condition(v.clone()), "Slack".to_string()),
+					None => EEWSocket::new(sl, TRUE_CONDITION, "Slack".to_string()),
+				};
+				socks.push(s);
 				info!("Enabled: Slack");
 			},
 			Err(_) => {

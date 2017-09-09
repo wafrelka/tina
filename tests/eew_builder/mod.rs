@@ -132,7 +132,7 @@ impl EEWBuilder {
 			kind: self.kind.unwrap_or(Kind::Normal),
 			issued_at: self.issued_at.unwrap_or(UTC.ymd(2010, 1, 1).and_hms(1, 0, 2)),
 			occurred_at: self.occurred_at.unwrap_or(UTC.ymd(2010, 1, 1).and_hms(0, 55, 59)),
-			id: self.id.unwrap_or("ND20100101005559".to_owned()),
+			id: self.id.unwrap_or("NDXXXX".to_owned()),
 			status: self.status.unwrap_or(Status::Normal),
 			number: self.number.unwrap_or(10),
 			detail: if self.detail_none { None } else { Some(detail) },

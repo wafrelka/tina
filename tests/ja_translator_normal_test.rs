@@ -1,60 +1,10 @@
 extern crate chrono;
 extern crate tina;
 
-use chrono::*;
 use tina::*;
 
 mod eew_builder;
 use eew_builder::*;
-
-
-struct MiniEEW {
-	issue_pattern: IssuePattern,
-	kind: Kind,
-	status: Status,
-	detail: Option<MiniEEWDetail>,
-}
-
-struct MiniEEWDetail {
-	depth: Option<f32>,
-	magnitude: Option<f32>,
-	maximum_intensity: Option<IntensityClass>,
-	warning_status: WarningStatus,
-}
-
-impl From<MiniEEW> for EEW {
-
-	fn from(v: MiniEEW) -> EEW
-	{
-		EEW {
-			issue_pattern: v.issue_pattern, source: Source::Tokyo, kind: v.kind,
-			issued_at: UTC.ymd(2010, 1, 1).and_hms(1, 0, 2),
-			occurred_at: UTC.ymd(2010, 1, 1).and_hms(0, 55, 59),
-			id: "ND20100101005559".to_owned(), status: v.status, number: 10,
-			detail: v.detail.map(|d| d.into()),
-		}
-	}
-}
-
-impl From<MiniEEWDetail> for EEWDetail {
-
-	fn from(v: MiniEEWDetail) -> EEWDetail
-	{
-		EEWDetail {
-			epicenter_name: "奈良県".to_owned(), epicenter: (34.4, 135.7),
-			depth: v.depth, magnitude: v.magnitude,
-			maximum_intensity: v.maximum_intensity,
-			epicenter_accuracy: EpicenterAccuracy::GridSearchLow,
-			depth_accuracy: DepthAccuracy::GridSearchLow,
-			magnitude_accuracy: MagnitudeAccuracy::SWave,
-			epicenter_category: EpicenterCategory::Land,
-			warning_status: v.warning_status,
-			intensity_change: IntensityChange::Unknown,
-			change_reason: ChangeReason::Unknown,
-			area_info: vec!{},
-		}
-	}
-}
 
 
 #[test]

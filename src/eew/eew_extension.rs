@@ -23,8 +23,10 @@ impl EEW {
 					Some(WarningStatus::Alert) => Some(EEWPhase::Alert),
 					Some(WarningStatus::Forecast) => {
 						match self.issue_pattern {
-							IssuePattern::IntensityOnly => Some(EEWPhase::FastForecast),
-							IssuePattern::LowAccuracy | IssuePattern::HighAccuracy => Some(EEWPhase::Forecast),
+							IssuePattern::IntensityOnly | IssuePattern::LowAccuracy
+								=> Some(EEWPhase::FastForecast),
+							IssuePattern::HighAccuracy
+								=> Some(EEWPhase::Forecast),
 							_ => None,
 						}
 					}

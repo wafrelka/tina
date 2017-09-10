@@ -47,7 +47,7 @@ fn it_should_format_low_accuracy_eew()
 		.build();
 
 	let expected =
-		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
+		"[速報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
 	let result = ja_format_eew_short(&eew, None);
 

@@ -69,8 +69,8 @@ impl Condition for ValueCondition {
 		let prev = prevs.iter().last();
 
 		let simple_conds = [
-			test_bool(self.first, prevs.len() <= 0),
-			test_bool(self.succeeding, prevs.len() >= 1),
+			test_bool(self.first, prevs.is_empty()),
+			test_bool(self.succeeding, !prevs.is_empty()),
 			test_bool(self.alert, latest.get_eew_phase() == Some(EEWPhase::Alert)),
 			test_bool(self.last, latest.is_last()),
 			test_bool(self.cancel, latest.get_eew_phase() == Some(EEWPhase::Cancel)),

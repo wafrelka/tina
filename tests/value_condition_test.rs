@@ -10,7 +10,7 @@ use eew_builder::*;
 
 const DEF_COND: ValueCondition = ValueCondition {
 	first: None, succeeding: None, alert: None, last: None, cancel: None, drill: None, test: None,
-	phase_changed: None, magnitude_over: None, intensity_over: None,
+	phase_changed: None, epicenter_name_changed: None, magnitude_over: None, intensity_over: None,
 	intensity_up: None, intensity_down: None,
 };
 
@@ -89,6 +89,18 @@ fn it_should_handle_drill_condition()
 fn it_should_handle_test_condition()
 {
 	// TODO: implement test
+}
+
+#[test]
+fn it_should_handle_epicenter_name_changed_condition()
+{
+	let a_eew = Arc::new(EEWBuilder::new().epicenter_name("A").build());
+	let b_eew = Arc::new(EEWBuilder::new().epicenter_name("B").build());
+	let cond = ValueCondition { epicenter_name_changed: Some(true), .. DEF_COND };
+
+	assert_eq!(check(&cond, &a_eew, None), false);
+	assert_eq!(check(&cond, &a_eew, Some(&a_eew)), false);
+	assert_eq!(check(&cond, &a_eew, Some(&b_eew)), true);
 }
 
 #[test]

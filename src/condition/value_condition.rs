@@ -16,6 +16,7 @@ pub struct ValueCondition {
 	pub test: Option<bool>,
 
 	pub phase_changed: Option<bool>,
+	pub epicenter_name_changed: Option<bool>,
 
 	pub magnitude_over: Option<f32>,
 	pub intensity_over: Option<IntensityClass>,
@@ -83,6 +84,10 @@ impl Condition for ValueCondition {
 		let comp_conds = [
 			test_with_prev(self.phase_changed, latest, prev,
 				|v, latest, prev| (latest.get_eew_phase() != prev.get_eew_phase()) == v),
+			test_with_prev_detail(self.epicenter_name_changed, latest, prev,
+				|v, latest, prev| {
+					(latest.epicenter_name != prev.epicenter_name) == v
+				}),
 			test_with_prev_detail(self.intensity_up, latest, prev,
 				|v, latest, prev| {
 					let l_v = latest.maximum_intensity.map_or(-1, |i| i as i32);

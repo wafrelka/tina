@@ -11,6 +11,7 @@ pub struct EEWBuilder {
 	status: Option<Status>,
 	number: Option<u32>,
 	detail_none: bool,
+	epicenter_name: Option<String>,
 	epicenter: Option<(f32, f32)>,
 	depth: Option<Option<f32>>,
 	magnitude: Option<Option<f32>>,
@@ -25,7 +26,7 @@ impl EEWBuilder {
 		EEWBuilder {
 			issue_pattern: None, kind: None, issued_at: None, occurred_at: None,
 			id: None, status: None, number: None, detail_none: false,
-			epicenter: None, depth: None, magnitude: None,
+			epicenter_name: None, epicenter: None, depth: None, magnitude: None,
 			maximum_intensity: None, warning_status: None,
 		}
 	}
@@ -79,6 +80,12 @@ impl EEWBuilder {
 	}
 
 	#[allow(dead_code)]
+	pub fn epicenter_name<S>(self, epicenter_name: S) -> Self where S: Into<String>
+	{
+		Self { epicenter_name: Some(epicenter_name.into()), .. self }
+	}
+
+	#[allow(dead_code)]
 	pub fn epicenter(self, epicenter: (f32, f32)) -> Self
 	{
 		Self { epicenter: Some(epicenter), .. self }
@@ -111,7 +118,7 @@ impl EEWBuilder {
 	pub fn build(self) -> EEW
 	{
 		let detail = EEWDetail {
-			epicenter_name: "奈良県".to_owned(),
+			epicenter_name: self.epicenter_name.unwrap_or("奈良県".into()),
 			epicenter: self.epicenter.unwrap_or((34.4, 135.7)),
 			depth: self.depth.unwrap_or(Some(10.0)),
 			magnitude: self.magnitude.unwrap_or(Some(5.9)),

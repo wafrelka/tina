@@ -12,6 +12,24 @@ twitter:
   access_token: "0000000000-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
   access_secret: "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
   in_reply_to_enabled: false
+  updown_enabled: true
+  cond:
+    - first: true
+    - succeeding: true
+      intensity_up: 1
+    - succeeding: true
+      intensity_down: 1
+    - succeeding: true
+      phase_changed: true
+    - succeeding: true
+      epicenter_name_changed: true
+    - last: true
+
+slack:
+  webhook_url: "https://hooks.slack.com/services/XXXXXXXXXX"
+  cond:
+    - first: true
+    - last: true
 
 log:
   eew_log_path: "eew.log"

@@ -13,7 +13,7 @@ use chrono::{DateTime, UTC};
 use eew::EEW;
 use parser::{parse_jma_format, JMAFormatParseError};
 
-const READ_TIMEOUT_SECS: u64 = 3 * 60;
+const CONNECTION_TIMEOUT_SECS: u64 = 3 * 60;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum WniError {
@@ -97,8 +97,10 @@ impl<'a> WniConnection<'a> {
 	{
 		let stream = TcpStream::connect(&server).map_err(|_| WniError::Network)?;
 		stream.set_nodelay(true).expect("set_nodelay call failed");
-		stream.set_read_timeout(Some(Duration::from_secs(READ_TIMEOUT_SECS)))
+		stream.set_read_timeout(Some(Duration::from_secs(CONNECTION_TIMEOUT_SECS)))
 			.expect("set_read_timeout call failed");
+		stream.set_write_timeout(Some(Duration::from_secs(CONNECTION_TIMEOUT_SECS)))
+			.expect("set_write_timeout call failed");
 
 		let reader = BufReader::new(stream);
 

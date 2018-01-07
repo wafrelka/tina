@@ -76,7 +76,7 @@ impl Wni {
 	pub fn connect(&self) -> Result<WniConnection, WniError>
 	{
 		let server = self.retrieve_server()?;
-		let conn = WniConnection::open(&server,
+		let conn = WniConnection::open(server,
 			&self.wni_id, &self.wni_terminal_id, &self.wni_password, &self.logger)?;
 
 		Ok(conn)
@@ -85,16 +85,17 @@ impl Wni {
 
 #[derive(Debug)]
 pub struct WniConnection<'a> {
+	server: String,
 	reader: BufReader<TcpStream>,
 	logger: &'a Logger,
 }
 
 impl<'a> WniConnection<'a> {
 
-	pub fn open<'b>(server: &'b str, wni_id: &'b str, wni_terminal_id: &'b str,
+	pub fn open<'b>(server: String, wni_id: &'b str, wni_terminal_id: &'b str,
 		wni_password: &'b str, logger: &'a Logger) -> Result<WniConnection<'a>, WniError>
 	{
-		let stream = TcpStream::connect(server).map_err(|_| WniError::Network)?;
+		let stream = TcpStream::connect(&server).map_err(|_| WniError::Network)?;
 		stream.set_nodelay(true).expect("set_nodelay call failed");
 		stream.set_read_timeout(Some(Duration::from_secs(READ_TIMEOUT_SECS)))
 			.expect("set_read_timeout call failed");
@@ -102,6 +103,7 @@ impl<'a> WniConnection<'a> {
 		let reader = BufReader::new(stream);
 
 		let mut conn = WniConnection {
+			server: server,
 			reader: reader,
 			logger: logger,
 		};
@@ -134,7 +136,7 @@ impl<'a> WniConnection<'a> {
 			}
 		}
 
-		slog_info!(self.logger, "{}", formatted);
+		slog_info!(self.logger, "[{}] {}", self.server, formatted);
 	}
 
 	fn read_until(&mut self, marker: u8) -> Result<Vec<u8>, WniError>
@@ -268,7 +270,8 @@ impl<'a> WniConnection<'a> {
 		let now = UTC::now();
 		let delay = now.signed_duration_since(eew.issued_at);
 		let delay_in_ms = delay.num_milliseconds();
-		slog_debug!(self.logger, "delay: {}, id: {}, num: {}", delay_in_ms, eew.id, eew.number);
+		slog_debug!(self.logger, "[{}] delay: {}, id: {}, num: {}",
+			self.server, delay_in_ms, eew.id, eew.number);
 
 		Ok(eew)
 	}

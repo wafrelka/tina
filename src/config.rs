@@ -26,7 +26,7 @@ pub enum ConfigLoadError {
 #[serde(deny_unknown_fields)]
 struct RawRootConfig {
 	pub path: DictPathConfig,
-	pub wni: WNIConfig,
+	pub wni: WniConfig,
 	pub twitter: Option<TwitterConfig>,
 	pub slack: Option<SlackConfig>,
 	pub log: LogConfig,
@@ -51,7 +51,7 @@ pub struct LogConfig {
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct WNIConfig {
+pub struct WniConfig {
 	pub id: String,
 	pub password: String,
 }
@@ -103,7 +103,7 @@ pub struct ValueConditionConfig {
 pub struct Config {
 	pub area_dict: HashMap<[u8; 3], String>,
 	pub epicenter_dict: HashMap<[u8; 3], String>,
-	pub wni: WNIConfig,
+	pub wni: WniConfig,
 	pub twitter: Option<TwitterConfig>,
 	pub slack: Option<SlackConfig>,
 	pub log: LogConfig,

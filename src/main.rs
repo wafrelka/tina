@@ -70,7 +70,7 @@ fn main()
 	let eew_logger = build_specific_logger(&conf.log.eew_log_path, conf.log.eew_stdout_log, &stdout_logger);
 	let wni_logger = build_specific_logger(&conf.log.wni_log_path, conf.log.wni_stdout_log, &stdout_logger);
 
-	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
+	let wni_client = WniClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
 	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));

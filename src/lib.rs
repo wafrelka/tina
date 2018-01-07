@@ -27,7 +27,7 @@ pub use self::collections::*;
 pub use self::eew::*;
 pub use self::parser::*;
 pub use self::eew_socket::EEWSocket;
-pub use self::source::{WNIClient};
+pub use self::source::{WniClient};
 pub use self::destination::{Twitter, Logging, Slack};
 pub use self::translator::{ja_format_eew_short, format_eew_full};
 pub use self::moderator::Moderator;

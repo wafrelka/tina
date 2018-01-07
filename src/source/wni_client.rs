@@ -15,9 +15,9 @@ use eew::EEW;
 use parser::{parse_jma_format, JMAFormatParseError};
 
 
-header! { (XWNIAccount, "X-WNI-Account") => [String] }
-header! { (XWNIPassword, "X-WNI-Password") => [String] }
-header! { (XWNIResult, "X-WNI-Result") => [String] }
+header! { (XWniAccount, "X-WNI-Account") => [String] }
+header! { (XWniPassword, "X-WNI-Password") => [String] }
+header! { (XWniResult, "X-WNI-Result") => [String] }
 
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 const LOGIN_PATH: &'static str = "/login";
@@ -26,7 +26,7 @@ const ADDITIONAL_CAPACITY_FOR_HEX_ENCODING: usize = 256;
 const DEFAULT_CAPACITY_FOR_TELEGRAM_BUFFER: usize = 2048;
 
 #[derive(Debug, Clone)]
-pub enum WNIError {
+pub enum WniError {
 	Authentication,
 	Network,
 	ConnectionClosed,
@@ -34,7 +34,7 @@ pub enum WNIError {
 	ParseError(JMAFormatParseError)
 }
 
-pub struct WNIClient {
+pub struct WniClient {
 	wni_id: String,
 	wni_password: String,
 	client: Client,
@@ -57,14 +57,14 @@ fn from_data_to_string(raw: &[u8]) -> String
 	s
 }
 
-impl WNIClient {
+impl WniClient {
 
-	pub fn new(wni_id: String, wni_password: String, logger: Option<Logger>) -> WNIClient
+	pub fn new(wni_id: String, wni_password: String, logger: Option<Logger>) -> WniClient
 	{
 		let mut client = Client::new();
 		client.set_read_timeout(Some(Duration::from_secs(TIMEOUT_SECS)));
 
-		WNIClient {
+		WniClient {
 			wni_id: wni_id,
 			wni_password: wni_password,
 			client: client,
@@ -72,18 +72,18 @@ impl WNIClient {
 		}
 	}
 
-	pub fn retrieve_server(&self) -> Result<String, WNIError>
+	pub fn retrieve_server(&self) -> Result<String, WniError>
 	{
-		let mut res = try!(self.client.get(SERVER_LIST_URL).send().map_err(|_| WNIError::Network));
+		let mut res = try!(self.client.get(SERVER_LIST_URL).send().map_err(|_| WniError::Network));
 		let mut body = String::new();
-		try!(res.read_to_string(&mut body).map_err(|_| WNIError::Network));
+		try!(res.read_to_string(&mut body).map_err(|_| WniError::Network));
 
 		let servers: Vec<&str> = body.split('\n').filter(|&s| s != "").collect();
 
-		return thread_rng().choose(&servers).ok_or(WNIError::Network).map(|s| s.to_string());
+		return thread_rng().choose(&servers).ok_or(WniError::Network).map(|s| s.to_string());
 	}
 
-	pub fn connect(&self) -> Result<WNIConnection, WNIError>
+	pub fn connect(&self) -> Result<WniConnection, WniError>
 	{
 		let server = try!(self.retrieve_server());
 		let url = format!("http://{}{}", server, LOGIN_PATH);
@@ -93,43 +93,43 @@ impl WNIClient {
 		let hashed = hasher.result_str();
 
 		let mut headers = Headers::new();
-		headers.set(XWNIAccount(self.wni_id.clone()));
-		headers.set(XWNIPassword(hashed));
+		headers.set(XWniAccount(self.wni_id.clone()));
+		headers.set(XWniPassword(hashed));
 
-		let res = try!(self.client.get(&url).headers(headers).send().map_err(|_| WNIError::Network));
+		let res = try!(self.client.get(&url).headers(headers).send().map_err(|_| WniError::Network));
 
-		if res.headers.get::<XWNIResult>() != Some(&XWNIResult("OK".to_owned())) {
-			Err(WNIError::Authentication)
+		if res.headers.get::<XWniResult>() != Some(&XWniResult("OK".to_owned())) {
+			Err(WniError::Authentication)
 		} else {
-			Ok(WNIConnection::new(res, &self.logger))
+			Ok(WniConnection::new(res, &self.logger))
 		}
 	}
 }
 
-pub struct WNIConnection<'a> {
+pub struct WniConnection<'a> {
 	reader: BufReader<Response>,
 	logger: &'a Logger,
 }
 
-impl<'a> WNIConnection<'a> {
+impl<'a> WniConnection<'a> {
 
-	pub fn new(response: Response, logger: &Logger) -> WNIConnection
+	pub fn new(response: Response, logger: &Logger) -> WniConnection
 	{
 		let reader = BufReader::new(response);
-		WNIConnection { reader: reader, logger: logger }
+		WniConnection { reader: reader, logger: logger }
 	}
 
-	fn read_until(&mut self, byte: u8) -> Result<Vec<u8>, WNIError>
+	fn read_until(&mut self, byte: u8) -> Result<Vec<u8>, WniError>
 	{
 		// reduce reallocation
 		let mut buf = Vec::with_capacity(DEFAULT_CAPACITY_FOR_TELEGRAM_BUFFER);
 
 		match self.reader.read_until(byte, &mut buf) {
-			Err(_) => Err(WNIError::Network),
-			Ok(0) => Err(WNIError::ConnectionClosed),
+			Err(_) => Err(WniError::Network),
+			Ok(0) => Err(WniError::ConnectionClosed),
 			Ok(_) =>
 				if buf.last().map(|v| *v) != Some(byte) {
-					Err(WNIError::ConnectionClosed)
+					Err(WniError::ConnectionClosed)
 				} else {
 					Ok(buf)
 				}
@@ -147,7 +147,7 @@ impl<'a> WNIConnection<'a> {
 
 	pub fn wait_for_telegram(&mut self,
 		epicenter_dict: &HashMap<[u8; 3], String>,
-		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WNIError>
+		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WniError>
 	{
 		loop {
 			let buffer = try!(self.read_until(b'\n'));
@@ -160,16 +160,16 @@ impl<'a> WNIConnection<'a> {
 		let buffer = try!(self.read_until(b'\x03'));
 		self.output_log(&buffer);
 
-		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WNIError::InvalidData)) + 2;
+		let left = try!(buffer.iter().rposition(|&x| x == b'\x02').ok_or(WniError::InvalidData)) + 2;
 		let right = buffer.len() - 2;
 
 		if left >= right {
-			return Err(WNIError::InvalidData);
+			return Err(WniError::InvalidData);
 		}
 
 		let raw_data = &buffer[left..right];
 		let eew = try!(parse_jma_format(raw_data, epicenter_dict, area_dict)
-			.map_err(|e| WNIError::ParseError(e)));
+			.map_err(|e| WniError::ParseError(e)));
 
 		return Ok(eew);
 	}

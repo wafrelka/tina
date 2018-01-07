@@ -265,6 +265,11 @@ impl<'a> WniConnection<'a> {
 
 		self.write_response()?;
 
+		let now = UTC::now();
+		let delay = now.signed_duration_since(eew.issued_at);
+		let delay_in_ms = delay.num_milliseconds();
+		slog_debug!(self.logger, "delay: {}, id: {}, num: {}", delay_in_ms, eew.id, eew.number);
+
 		Ok(eew)
 	}
 }

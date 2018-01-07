@@ -23,6 +23,7 @@ use config::*;
 
 const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
+const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 
 fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: &Logger) -> Logger
 {
@@ -70,7 +71,8 @@ fn main()
 	let eew_logger = build_specific_logger(&conf.log.eew_log_path, conf.log.eew_stdout_log, &stdout_logger);
 	let wni_logger = build_specific_logger(&conf.log.wni_log_path, conf.log.wni_stdout_log, &stdout_logger);
 
-	let wni_client = WniClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
+	let wni = Wni::new(conf.wni.id.clone(), "40285072".to_owned(), conf.wni.password.clone(),
+		SERVER_LIST_URL.to_owned(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
 	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));
@@ -114,7 +116,7 @@ fn main()
 
 	loop {
 
-		let mut connection = match wni_client.connect() {
+		let mut connection = match wni.connect() {
 			Ok(v) => v,
 			Err(e) => {
 				error!("ConnectionError: {:?}", e);

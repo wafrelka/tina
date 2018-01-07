@@ -8,6 +8,7 @@ extern crate crypto;
 extern crate rand;
 #[macro_use] extern crate slog;
 #[macro_use] extern crate slog_scope;
+extern crate reqwest;
 
 macro_rules! write_unwrap {
 	($dst:expr, $($arg:tt)*) => (write!($dst, $($arg)*).unwrap())
@@ -27,7 +28,7 @@ pub use self::collections::*;
 pub use self::eew::*;
 pub use self::parser::*;
 pub use self::eew_socket::EEWSocket;
-pub use self::source::{WniClient};
+pub use self::source::Wni;
 pub use self::destination::{Twitter, Logging, Slack};
 pub use self::translator::{ja_format_eew_short, format_eew_full};
 pub use self::moderator::Moderator;

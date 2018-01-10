@@ -78,8 +78,7 @@ fn main()
 	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));
 	info!("Enabled: EEW Logging");
 
-	if conf.twitter.is_some() {
-		let t = &conf.twitter.unwrap();
+	if let Some(ref t) = conf.twitter.as_ref() {
 		let tw = Twitter::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
 			t.access_token.clone(), t.access_secret.clone(), t.in_reply_to_enabled, t.updown_enabled);
@@ -95,8 +94,7 @@ fn main()
 		}
 	}
 
-	if conf.slack.is_some() {
-		let s = &conf.slack.unwrap();
+	if let Some(ref s) = conf.slack.as_ref() {
 		match Slack::build(&s.webhook_url, s.updown_enabled) {
 			Ok(sl) => {
 				let s = match s.cond {

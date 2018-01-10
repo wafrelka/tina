@@ -277,4 +277,9 @@ impl<'a> WniConnection<'a> {
 
 		Ok(eew)
 	}
+
+	pub fn server(&self) -> &str
+	{
+		&self.server
+	}
 }

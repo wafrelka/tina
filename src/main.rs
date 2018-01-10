@@ -13,6 +13,10 @@ use std::io::stdout;
 use std::env;
 use std::sync::Arc;
 use std::fs::OpenOptions;
+use std::sync::mpsc::sync_channel;
+use std::sync::mpsc::SyncSender;
+use std::thread::{spawn, JoinHandle};
+use std::collections::HashMap;
 
 use slog::{Drain, Logger, Discard, Duplicate};
 use slog_scope::set_global_logger;
@@ -23,6 +27,7 @@ use config::*;
 
 const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
+const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 
 fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: &Logger) -> Logger
 {
@@ -41,6 +46,45 @@ fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: 
 
 		if duplication { default.clone() } else { Logger::root(Discard, o!()) }
 	}
+}
+
+fn spawn_conn_thread(thread_num: u32, wni: Wni,
+	epicenter_dict: HashMap<[u8; 3], String>, area_dict: HashMap<[u8; 3], String>,
+	sock: SyncSender<EEW>) -> JoinHandle<()>
+{
+	spawn(move || {
+
+		let mut moderator = Moderator::new();
+
+		loop {
+
+			let mut connection = match wni.connect() {
+				Ok(v) => v,
+				Err(e) => {
+					error!("Thread {} - ConnectionError: {:?}", thread_num, e);
+					moderator.wait_for_retry();
+					moderator.add_count();
+					continue;
+				}
+			};
+
+			moderator.reset();
+			info!("Thread {} - Connected: WNI ({})", thread_num, connection.server());
+
+			loop {
+
+				let eew = match connection.wait_for_telegram(&epicenter_dict, &area_dict) {
+					Err(e) => {
+						error!("Thread {} - StreamingError: {:?}", thread_num, e);
+						break;
+					},
+					Ok(eew) => eew
+				};
+
+				sock.try_send(eew).expect("should not fail");
+			}
+		}
+	})
 }
 
 fn main()
@@ -70,14 +114,14 @@ fn main()
 	let eew_logger = build_specific_logger(&conf.log.eew_log_path, conf.log.eew_stdout_log, &stdout_logger);
 	let wni_logger = build_specific_logger(&conf.log.wni_log_path, conf.log.wni_stdout_log, &stdout_logger);
 
-	let wni_client = WNIClient::new(conf.wni.id.clone(), conf.wni.password.clone(), Some(wni_logger));
+	let wni = Wni::new(conf.wni.id.clone(), "40285072".to_owned(), conf.wni.password.clone(),
+		SERVER_LIST_URL.to_owned(), Some(wni_logger));
 	let mut socks: Vec<EEWSocket> = Vec::new();
 
 	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));
 	info!("Enabled: EEW Logging");
 
-	if conf.twitter.is_some() {
-		let t = &conf.twitter.unwrap();
+	if let Some(ref t) = conf.twitter.as_ref() {
 		let tw = Twitter::new(
 			t.consumer_token.clone(), t.consumer_secret.clone(),
 			t.access_token.clone(), t.access_secret.clone(), t.in_reply_to_enabled, t.updown_enabled);
@@ -93,8 +137,7 @@ fn main()
 		}
 	}
 
-	if conf.slack.is_some() {
-		let s = &conf.slack.unwrap();
+	if let Some(ref s) = conf.slack.as_ref() {
 		match Slack::build(&s.webhook_url, s.updown_enabled) {
 			Ok(sl) => {
 				let s = match s.cond {
@@ -110,36 +153,20 @@ fn main()
 		}
 	}
 
-	let mut moderator = Moderator::new();
+	let mut conn_threads = Vec::new();
+	let (eew_tx, eew_rx) = sync_channel(32);
+
+	for thread_num in 0..3 {
+
+		let t = spawn_conn_thread(thread_num, wni.clone(),
+			conf.epicenter_dict.clone(), conf.area_dict.clone(), eew_tx.clone());
+		conn_threads.push(t);
+	}
 
 	loop {
-
-		let mut connection = match wni_client.connect() {
-			Ok(v) => v,
-			Err(e) => {
-				error!("ConnectionError: {:?}", e);
-				moderator.wait_for_retry();
-				moderator.add_count();
-				continue;
-			}
-		};
-
-		moderator.reset();
-		info!("Connected: WNI");
-
-		loop {
-
-			let eew = match connection.wait_for_telegram(&conf.epicenter_dict, &conf.area_dict) {
-				Err(e) => {
-					error!("StreamingError: {:?}", e);
-					break;
-				},
-				Ok(eew) => Arc::new(eew)
-			};
-
-			for s in socks.iter() {
-				s.emit(eew.clone());
-			}
+		let eew = Arc::new(eew_rx.recv().unwrap());
+		for s in socks.iter() {
+			s.emit(eew.clone());
 		}
 	}
 }

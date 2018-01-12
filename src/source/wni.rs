@@ -2,18 +2,22 @@ use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
 use std::collections::HashMap;
 use std::net::TcpStream;
+use std::str;
 
 use reqwest::Client;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
 use rand::{thread_rng, Rng};
 use slog::{Logger, Discard};
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, UTC, TimeZone};
 
 use eew::EEW;
 use parser::{parse_jma_format, JMAFormatParseError};
 
 const CONNECTION_TIMEOUT_SECS: u64 = 3 * 60;
+const DELAY_THRESHOLD_MS: i64 = 2000;
+const DATE_FORMAT: &'static str = "%a, %d %b %Y %T%.6f UTC";
+const X_WNI_TIME_FORMAT: &'static str = "%Y/%m/%d %T%.6f";
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum WniError {
@@ -21,6 +25,7 @@ pub enum WniError {
 	Network,
 	ConnectionClosed,
 	InvalidData,
+	TooSlow,
 	ParseError(JMAFormatParseError),
 }
 
@@ -36,12 +41,22 @@ pub struct Wni {
 
 fn to_header_date(utc: &DateTime<UTC>) -> String
 {
-	utc.format("%a, %d %b %Y %T%.6f UTC").to_string()
+	utc.format(DATE_FORMAT).to_string()
+}
+
+fn from_header_date(txt: &[u8]) -> Option<DateTime<UTC>>
+{
+	str::from_utf8(txt).ok().and_then(|s| UTC.datetime_from_str(s, DATE_FORMAT).ok())
 }
 
 fn to_wni_time(utc: &DateTime<UTC>) -> String
 {
-	utc.format("%Y/%m/%d %T%.6f").to_string()
+	utc.format(X_WNI_TIME_FORMAT).to_string()
+}
+
+fn from_wni_time(txt: &[u8]) -> Option<DateTime<UTC>>
+{
+	str::from_utf8(txt).ok().and_then(|s| UTC.datetime_from_str(s, X_WNI_TIME_FORMAT).ok())
 }
 
 impl Wni {
@@ -88,6 +103,7 @@ pub struct WniConnection<'a> {
 	server: String,
 	reader: BufReader<TcpStream>,
 	logger: &'a Logger,
+	too_slow: bool,
 }
 
 impl<'a> WniConnection<'a> {
@@ -108,6 +124,7 @@ impl<'a> WniConnection<'a> {
 			server: server,
 			reader: reader,
 			logger: logger,
+			too_slow: false,
 		};
 
 		conn.write_request(wni_id, wni_terminal_id, wni_password)?;
@@ -241,12 +258,44 @@ impl<'a> WniConnection<'a> {
 		epicenter_dict: &HashMap<[u8; 3], String>,
 		area_dict: &HashMap<[u8; 3], String>) -> Result<EEW, WniError>
 	{
+		if self.too_slow {
+			return Err(WniError::TooSlow);
+		}
+
 		loop {
 
 			let headers = self.read_headers()?;
 
 			if headers.iter().any(|h| h == b"X-WNI-ID: Data") {
+
+				let date_part = headers.iter()
+					.find(|h| h.starts_with(b"Date: "))
+					.and_then(|s| from_header_date(&s[6..]));
+				let x_wni_time_part = headers.iter()
+					.find(|h| h.starts_with(b"X-WNI-Time: "))
+					.and_then(|s| from_wni_time(&s[12..]));
+
+				let delta_ms = match (date_part, x_wni_time_part) {
+					(Some(date), Some(x_wni_time)) =>
+						Some(date.signed_duration_since(x_wni_time).num_milliseconds()),
+					_ => None,
+				};
+
+				match delta_ms {
+					Some(x) if x > DELAY_THRESHOLD_MS => {
+						self.too_slow = true;
+						info!("[{}] delay: {} (too slow)", self.server, x);
+					},
+					Some(x) => {
+						debug!("[{}] delay: {}", self.server, x);
+					},
+					None => {
+						warn!("[{}] arrival delay parse error", self.server);
+					}
+				}
+
 				break;
+
 			} else if ! headers.iter().any(|h| h == b"X-WNI-ID: Keep-Alive") {
 				return Err(WniError::InvalidData);
 			}
@@ -268,12 +317,6 @@ impl<'a> WniConnection<'a> {
 			.map_err(|e| WniError::ParseError(e))?;
 
 		self.write_response()?;
-
-		let now = UTC::now();
-		let delay = now.signed_duration_since(eew.issued_at);
-		let delay_in_ms = delay.num_milliseconds();
-		slog_debug!(self.logger, "[{}] delay: {}, id: {}, num: {}",
-			self.server, delay_in_ms, eew.id, eew.number);
 
 		Ok(eew)
 	}

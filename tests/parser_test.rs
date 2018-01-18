@@ -3,7 +3,7 @@ extern crate tina;
 
 use std::collections::HashMap;
 
-use chrono::*;
+use chrono::{DateTime, Utc, TimeZone};
 use tina::*;
 
 fn parse(telegram: &[u8]) -> Result<EEW, JMAFormatParseError>
@@ -42,8 +42,8 @@ fn it_should_parse_cancel_eew()
 		issue_pattern: IssuePattern::Cancel,
 		source: Source::Tokyo,
 		kind: Kind::Cancel,
-		issued_at: UTC.ymd(2012, 1, 8).and_hms(4, 32, 17),
-		occurred_at: UTC.ymd(2012, 1, 8).and_hms(4, 31, 54),
+		issued_at: Utc.ymd(2012, 1, 8).and_hms(4, 32, 17),
+		occurred_at: Utc.ymd(2012, 1, 8).and_hms(4, 31, 54),
 		id: "ND20120108133201".to_owned(),
 		status: Status::Normal,
 		number: 3,
@@ -65,8 +65,8 @@ fn it_should_parse_normal_eew_01()
 		issue_pattern: IssuePattern::LowAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
-		issued_at: UTC.ymd(2013, 8, 4).and_hms(3, 29, 5),
-		occurred_at: UTC.ymd(2013, 8, 4).and_hms(3, 28, 49),
+		issued_at: Utc.ymd(2013, 8, 4).and_hms(3, 29, 5),
+		occurred_at: Utc.ymd(2013, 8, 4).and_hms(3, 28, 49),
 		id: "ND20130804122902".to_owned(),
 		status: Status::Normal,
 		number: 1,
@@ -102,8 +102,8 @@ fn it_should_parse_normal_eew_02()
 		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
-		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
-		occurred_at: UTC.ymd(2013, 8, 8).and_hms(7, 55, 59),
+		issued_at: Utc.ymd(2013, 8, 8).and_hms(7, 57, 2),
+		occurred_at: Utc.ymd(2013, 8, 8).and_hms(7, 55, 59),
 		id: "ND20130808165608".to_owned(),
 		status: Status::Normal,
 		number: 6,
@@ -140,7 +140,7 @@ fn it_should_parse_ebi_part()
 		9999=";
 
 	let make_areaeew = |area_name: &str, minimum_intensity: f32, maximum_intensity: Option<f32>,
-		reach_at: Option<DateTime<UTC>>, warning: bool, reached: bool|
+		reach_at: Option<DateTime<Utc>>, warning: bool, reached: bool|
 		-> AreaEEW { AreaEEW {
 			area_name: area_name.to_string(),
 			minimum_intensity: IntensityClass::new(minimum_intensity),
@@ -150,14 +150,14 @@ fn it_should_parse_ebi_part()
 			wave_status: if reached { WaveStatus::Reached } else { WaveStatus::Unreached }
 		} };
 
-	let date = UTC.ymd(2013, 8, 8);
+	let date = Utc.ymd(2013, 8, 8);
 
 	let expected = EEW {
 		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
-		issued_at: UTC.ymd(2013, 8, 8).and_hms(7, 57, 2),
-		occurred_at: UTC.ymd(2013, 8, 8).and_hms(7, 55, 59),
+		issued_at: Utc.ymd(2013, 8, 8).and_hms(7, 57, 2),
+		occurred_at: Utc.ymd(2013, 8, 8).and_hms(7, 55, 59),
 		id: "ND20130808165608".to_owned(),
 		status: Status::Normal,
 		number: 6,
@@ -206,8 +206,8 @@ fn it_should_parse_eew_with_unknown_values()
 		issue_pattern: IssuePattern::HighAccuracy,
 		source: Source::Tokyo,
 		kind: Kind::Normal,
-		issued_at: UTC.ymd(2016, 6, 10).and_hms(14, 13, 41),
-		occurred_at: UTC.ymd(2016, 6, 10).and_hms(14, 12, 54),
+		issued_at: Utc.ymd(2016, 6, 10).and_hms(14, 13, 41),
+		occurred_at: Utc.ymd(2016, 6, 10).and_hms(14, 12, 54),
 		id: "ND20160610231334".to_owned(),
 		status: Status::Normal,
 		number: 1,

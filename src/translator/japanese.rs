@@ -1,12 +1,14 @@
 use std::cmp::Ordering;
 use std::fmt::Write;
 
-use chrono::*;
+use chrono::{DateTime, Utc, FixedOffset};
+use chrono::format::DelayedFormat;
+use chrono::format::strftime::StrftimeItems;
 
 use eew::*;
 
 
-pub fn format_time(dt: &DateTime<UTC>) -> format::DelayedFormat<format::strftime::StrftimeItems>
+pub fn format_time(dt: &DateTime<Utc>) -> DelayedFormat<StrftimeItems>
 {
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const TIME_FORMAT: &'static str = "%H:%M:%S";

@@ -1,7 +1,7 @@
 use std::str;
 use std::collections::HashMap;
 
-use chrono::*;
+use chrono::{DateTime, Utc, FixedOffset, TimeZone, Duration, NaiveTime};
 
 use eew::*;
 
@@ -35,14 +35,14 @@ pub enum JMAFormatParseError {
 	PrematureEOS,
 }
 
-fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<UTC>>
+fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<Utc>>
 {
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const DATETIME_FORMAT: &'static str = "%y%m%d%H%M%S";
 
 	str::from_utf8(&datetime_text).ok().and_then( |converted|
 		jst.datetime_from_str(converted, DATETIME_FORMAT).ok().map( |dt|
-			dt.with_timezone(&UTC)
+			dt.with_timezone(&Utc)
 		)
 	)
 }
@@ -70,7 +70,7 @@ fn parse_intensity(intensity_text: &[u8]) -> Option<IntensityClass>
 	}
 }
 
-fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<UTC>) -> Option<DateTime<UTC>>
+fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<Utc>) -> Option<DateTime<Utc>>
 {
 	let jst: FixedOffset = FixedOffset::east(9 * 3600); // XXX: want to use const keyword...
 	const TIME_FORMAT: &'static str = "%H%M%S";

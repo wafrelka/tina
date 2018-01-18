@@ -1,12 +1,12 @@
-use chrono::*;
+use chrono::{DateTime, Utc, TimeZone};
 use tina::*;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct EEWBuilder {
 	issue_pattern: Option<IssuePattern>,
 	kind: Option<Kind>,
-	issued_at: Option<DateTime<UTC>>,
-	occurred_at: Option<DateTime<UTC>>,
+	issued_at: Option<DateTime<Utc>>,
+	occurred_at: Option<DateTime<Utc>>,
 	id: Option<String>,
 	status: Option<Status>,
 	number: Option<u32>,
@@ -44,13 +44,13 @@ impl EEWBuilder {
 	}
 
 	#[allow(dead_code)]
-	pub fn issued_at(self, issued_at: DateTime<UTC>) -> Self
+	pub fn issued_at(self, issued_at: DateTime<Utc>) -> Self
 	{
 		Self { issued_at: Some(issued_at), .. self }
 	}
 
 	#[allow(dead_code)]
-	pub fn occurred_at(self, occurred_at: DateTime<UTC>) -> Self
+	pub fn occurred_at(self, occurred_at: DateTime<Utc>) -> Self
 	{
 		Self { occurred_at: Some(occurred_at), .. self }
 	}
@@ -137,8 +137,8 @@ impl EEWBuilder {
 			issue_pattern: self.issue_pattern.unwrap_or(IssuePattern::HighAccuracy),
 			source: Source::Tokyo,
 			kind: self.kind.unwrap_or(Kind::Normal),
-			issued_at: self.issued_at.unwrap_or(UTC.ymd(2010, 1, 1).and_hms(1, 0, 2)),
-			occurred_at: self.occurred_at.unwrap_or(UTC.ymd(2010, 1, 1).and_hms(0, 55, 59)),
+			issued_at: self.issued_at.unwrap_or(Utc.ymd(2010, 1, 1).and_hms(1, 0, 2)),
+			occurred_at: self.occurred_at.unwrap_or(Utc.ymd(2010, 1, 1).and_hms(0, 55, 59)),
 			id: self.id.unwrap_or("NDXXXX".to_owned()),
 			status: self.status.unwrap_or(Status::Normal),
 			number: self.number.unwrap_or(10),

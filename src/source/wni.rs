@@ -9,7 +9,7 @@ use crypto::digest::Digest;
 use crypto::md5::Md5;
 use rand::{thread_rng, Rng};
 use slog::{Logger, Discard};
-use chrono::{DateTime, UTC, TimeZone};
+use chrono::{DateTime, Utc, TimeZone};
 
 use eew::EEW;
 use parser::{parse_jma_format, JMAFormatParseError};
@@ -39,24 +39,24 @@ pub struct Wni {
 	logger: Logger,
 }
 
-fn to_header_date(utc: &DateTime<UTC>) -> String
+fn to_header_date(utc: &DateTime<Utc>) -> String
 {
 	utc.format(DATE_FORMAT).to_string()
 }
 
-fn from_header_date(txt: &[u8]) -> Option<DateTime<UTC>>
+fn from_header_date(txt: &[u8]) -> Option<DateTime<Utc>>
 {
-	str::from_utf8(txt).ok().and_then(|s| UTC.datetime_from_str(s, DATE_FORMAT).ok())
+	str::from_utf8(txt).ok().and_then(|s| Utc.datetime_from_str(s, DATE_FORMAT).ok())
 }
 
-fn to_wni_time(utc: &DateTime<UTC>) -> String
+fn to_wni_time(utc: &DateTime<Utc>) -> String
 {
 	utc.format(X_WNI_TIME_FORMAT).to_string()
 }
 
-fn from_wni_time(txt: &[u8]) -> Option<DateTime<UTC>>
+fn from_wni_time(txt: &[u8]) -> Option<DateTime<Utc>>
 {
-	str::from_utf8(txt).ok().and_then(|s| UTC.datetime_from_str(s, X_WNI_TIME_FORMAT).ok())
+	str::from_utf8(txt).ok().and_then(|s| Utc.datetime_from_str(s, X_WNI_TIME_FORMAT).ok())
 }
 
 impl Wni {
@@ -196,7 +196,7 @@ impl<'a> WniConnection<'a> {
 
 	fn write_response(&mut self) -> Result<(), WniError>
 	{
-		let now = UTC::now();
+		let now = Utc::now();
 		let resp = format!("\
 			HTTP/1.0 200 OK\n\
 			Content-Type: application/fast-cast\n\
@@ -224,7 +224,7 @@ impl<'a> WniConnection<'a> {
 		hasher.input(wni_password.as_bytes());
 		let hashed_password = hasher.result_str();
 
-		let now = UTC::now();
+		let now = Utc::now();
 		let req = format!("\
 			GET /login HTTP/1.0\n\
 			Accept: */*\n\

@@ -1,4 +1,4 @@
-use chrono::*;
+use chrono::{DateTime, Utc};
 
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -75,7 +75,7 @@ pub struct AreaEEW {
 	pub area_name: String,
 	pub minimum_intensity: IntensityClass,
 	pub maximum_intensity: Option<IntensityClass>,
-	pub reach_at: Option<DateTime<UTC>>,
+	pub reach_at: Option<DateTime<Utc>>,
 	pub warning_status: WarningStatus,
 	pub wave_status: WaveStatus,
 }
@@ -86,9 +86,9 @@ pub struct EEW {
 	pub issue_pattern: IssuePattern,
 	pub source: Source,
 	pub kind: Kind,
-	pub issued_at: DateTime<UTC>,
+	pub issued_at: DateTime<Utc>,
 
-	pub occurred_at: DateTime<UTC>,
+	pub occurred_at: DateTime<Utc>,
 	pub id: String,
 	pub status: Status,
 	pub number: u32, // we don't accept an EEW which has no telegram number

@@ -5,7 +5,7 @@ use eew::{EEW, EEWPhase};
 use condition::Condition;
 
 
-const DEFAULT_MAX_BLOCK_COUNT: usize = 16;
+const DEFAULT_MAX_BLOCK_COUNT: usize = 64;
 const INITIAL_BLOCK_CAPACITY: usize = 64;
 
 pub enum EEWBufferError {

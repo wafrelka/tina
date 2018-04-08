@@ -9,7 +9,7 @@ use destination::Destination;
 use condition::Condition;
 
 
-const DEFAULT_MAX_CHANNEL_SIZE: usize = 32;
+const DEFAULT_MAX_CHANNEL_SIZE: usize = 256;
 
 pub struct EEWSocket {
 	tx: SyncSender<Arc<EEW>>

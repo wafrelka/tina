@@ -1,5 +1,5 @@
-mod eew_buffer;
 mod limited_queue;
+mod eew_history;
 
-pub use self::eew_buffer::{EEWBuffer, EEWList, EEWBufferError};
-pub use self::limited_queue::LimitedQueue;
+pub use self::limited_queue::{LimitedQueue, IndexedLimitedQueue};
+pub use self::eew_history::EEWHistory;

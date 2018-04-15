@@ -16,7 +16,6 @@ macro_rules! write_unwrap {
 
 mod eew;
 mod parser;
-mod eew_socket;
 mod collections;
 mod source;
 mod destination;
@@ -27,9 +26,8 @@ mod condition;
 pub use self::collections::*;
 pub use self::eew::*;
 pub use self::parser::*;
-pub use self::eew_socket::EEWSocket;
 pub use self::source::Wni;
-pub use self::destination::{Twitter, Logging, Slack};
+pub use self::destination::{Twitter, Logging, Slack, Router, Routing};
 pub use self::translator::{ja_format_eew_short, format_eew_full};
 pub use self::moderator::Moderator;
 pub use self::condition::{Condition, ConstantCondition, TRUE_CONDITION, FALSE_CONDITION,

@@ -1,12 +1,11 @@
 use eew::*;
 
-
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum EEWPhase {
 	Cancel,
 	FastForecast,
 	Forecast,
-	Alert
+	Alert,
 }
 
 impl EEW {
@@ -57,5 +56,20 @@ impl EEW {
 	pub fn is_test(&self) -> bool
 	{
 		self.kind == Kind::Reference || self.kind == Kind::Trial
+	}
+
+	pub fn is_succeeded_by(&self, eew: &EEW) -> bool
+	{
+		if self.id != eew.id {
+			false
+		} else if self.number != eew.number {
+			self.number < eew.number
+		} else {
+			match (self.get_eew_phase(), eew.get_eew_phase()) {
+				(Some(EEWPhase::Cancel), _) => false,
+				(_, Some(EEWPhase::Cancel)) => true,
+				_ => false,
+			}
+		}
 	}
 }

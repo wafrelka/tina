@@ -1,19 +1,16 @@
 extern crate chrono;
 extern crate tina;
 
-use std::sync::Arc;
-
 use tina::*;
 
 mod eew_builder;
 use eew_builder::*;
 
-
 fn check<C>(cond: DisjunctiveCondition<C>) -> bool
 	where C: Condition
 {
-	let eew = Arc::new(EEWBuilder::new().build());
-	cond.is_satisfied(&eew.clone(), vec!{eew}.as_slice())
+	let eew = EEWBuilder::new().build();
+	cond.is_satisfied(&eew, None)
 }
 
 #[test]

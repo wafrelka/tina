@@ -11,7 +11,6 @@ mod config;
 
 use std::io::stdout;
 use std::env;
-use std::sync::Arc;
 use std::fs::OpenOptions;
 use std::sync::mpsc::sync_channel;
 use std::sync::mpsc::SyncSender;
@@ -29,6 +28,8 @@ const REVISION: &'static str = env!("TINA_REVISION");
 const CONF_PATH_ENV_VAR: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
+
+const EEW_HISTORY_CAPACITY: usize = 128;
 
 fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: &Logger) -> Logger
 {
@@ -125,9 +126,9 @@ fn main()
 
 	let wni = Wni::new(conf.wni.id.clone(), "40285072".to_owned(), conf.wni.password.clone(),
 		SERVER_LIST_URL.to_owned(), Some(wni_logger));
-	let mut socks: Vec<EEWSocket> = Vec::new();
+	let mut socks: Vec<Box<Routing>> = Vec::new();
 
-	socks.push(EEWSocket::new(Logging::new(eew_logger), TRUE_CONDITION, "Log"));
+	socks.push(Box::new(Router::new(Logging::new(eew_logger), TRUE_CONDITION, "Log")));
 	info!("Enabled: EEW Logging");
 
 	if let Some(ref t) = conf.twitter.as_ref() {
@@ -137,11 +138,10 @@ fn main()
 		if ! tw.is_valid() {
 			warn!("Twitter: Invalid tokens");
 		} else {
-			let s = match t.cond {
-				Some(ref v) => EEWSocket::new(tw, build_yaml_condition(v.clone()), "Twitter"),
-				None => EEWSocket::new(tw, TRUE_CONDITION, "Twitter"),
-			};
-			socks.push(s);
+			match t.cond {
+				Some(ref v) => socks.push(Box::new(Router::new(tw, build_yaml_condition(v.clone()), "Twitter"))),
+				None => socks.push(Box::new(Router::new(tw, TRUE_CONDITION, "Twitter"))),
+			}
 			info!("Enabled: Twitter");
 		}
 	}
@@ -149,11 +149,10 @@ fn main()
 	if let Some(ref s) = conf.slack.as_ref() {
 		match Slack::build(&s.webhook_url, s.updown_enabled) {
 			Ok(sl) => {
-				let s = match s.cond {
-					Some(ref v) => EEWSocket::new(sl, build_yaml_condition(v.clone()), "Slack"),
-					None => EEWSocket::new(sl, TRUE_CONDITION, "Slack"),
-				};
-				socks.push(s);
+				match s.cond {
+					Some(ref v) => socks.push(Box::new(Router::new(sl, build_yaml_condition(v.clone()), "Slack"))),
+					None => socks.push(Box::new(Router::new(sl, TRUE_CONDITION, "Slack"))),
+				}
 				info!("Enabled: Slack");
 			},
 			Err(_) => {
@@ -172,10 +171,14 @@ fn main()
 		conn_threads.push(t);
 	}
 
+	let mut his = EEWHistory::new(EEW_HISTORY_CAPACITY);
+
 	loop {
-		let eew = Arc::new(eew_rx.recv().unwrap());
-		for s in socks.iter() {
-			s.emit(eew.clone());
+		let eew = eew_rx.recv().unwrap();
+		if let Some(eew) = his.append(eew) {
+			for s in socks.iter_mut() {
+				s.emit(&eew);
+			}
 		}
 	}
 }

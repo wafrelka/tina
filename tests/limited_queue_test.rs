@@ -2,11 +2,10 @@ extern crate tina;
 
 use tina::*;
 
-
 #[test]
 fn it_should_erase_old_blocks_with_fifo_manner()
 {
-	let mut q = LimitedQueue::with_allocation(4);
+	let mut q = LimitedQueue::new(4);
 
 	q.push(1);
 	q.push(2);

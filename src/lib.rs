@@ -4,7 +4,7 @@ extern crate url;
 #[macro_use] extern crate hyper;
 extern crate hyper_native_tls;
 extern crate chrono;
-extern crate crypto;
+extern crate md5;
 extern crate rand;
 #[macro_use] extern crate slog;
 #[macro_use] extern crate slog_scope;

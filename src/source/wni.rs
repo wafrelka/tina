@@ -5,8 +5,7 @@ use std::net::TcpStream;
 use std::str;
 
 use reqwest::Client;
-use crypto::digest::Digest;
-use crypto::md5::Md5;
+use md5;
 use rand::{thread_rng, Rng};
 use slog::{Logger, Discard};
 use chrono::{DateTime, Utc, TimeZone};
@@ -220,9 +219,7 @@ impl<'a> WniConnection<'a> {
 	fn write_request(&mut self, wni_id: &str, wni_terminal_id: &str, wni_password: &str)
 		-> Result<(), WniError>
 	{
-		let mut hasher = Md5::new();
-		hasher.input(wni_password.as_bytes());
-		let hashed_password = hasher.result_str();
+		let hashed_password = format!("{:x}", md5::compute(wni_password.as_bytes()));
 
 		let now = Utc::now();
 		let req = format!("\

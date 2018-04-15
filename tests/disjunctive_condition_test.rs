@@ -6,7 +6,6 @@ use tina::*;
 mod eew_builder;
 use eew_builder::*;
 
-
 fn check<C>(cond: DisjunctiveCondition<C>) -> bool
 	where C: Condition
 {

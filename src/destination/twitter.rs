@@ -1,11 +1,8 @@
-use std::sync::Arc;
-
 use eew::EEW;
 use destination::client::TwitterClient;
 use destination::Destination;
 use collections::LimitedQueue;
 use translator::ja_format_eew_short;
-
 
 pub struct Twitter {
 	client: TwitterClient,
@@ -34,28 +31,28 @@ impl Twitter {
 
 impl Destination for Twitter {
 
-	fn emit(&mut self, latest: &Arc<EEW>, eews: &[Arc<EEW>])
+	fn emit(&mut self, latest: &EEW, prev: Option<&EEW>)
 	{
-		let prev_eew = match self.updown_enabled {
-			true => eews.iter().rev().nth(1).map(|e| e.as_ref()),
+		let prev = match self.updown_enabled {
+			true => prev,
 			false => None,
 		};
 
-		let out = match ja_format_eew_short(&latest, prev_eew) {
+		let out = match ja_format_eew_short(latest, prev) {
 			Some(out) => out,
 			None => return
 		};
 
-		let prev_tw_id_opt = match self.reply_enabled {
+		let prev_tw_id = match self.reply_enabled {
 			true => self.latest_tw_ids.iter().find(|x| x.0 == latest.id).map(|x| x.1),
 			false => None
 		};
 
-		match self.client.update_status(&out, prev_tw_id_opt) {
+		match self.client.update_status(&out, prev_tw_id) {
 
 			Ok(tw_id) => {
 
-				if prev_tw_id_opt == None {
+				if prev_tw_id == None {
 					self.latest_tw_ids.push((latest.id.clone(), tw_id));
 				} else {
 					self.latest_tw_ids.iter_mut().find(|x| x.0 == latest.id).unwrap().1 = tw_id;

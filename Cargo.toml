@@ -5,7 +5,7 @@ authors = ["wafrelka <wafrelka@gmail.com>"]
 
 [dependencies]
 oauthcli = "1.0"
-url = "1.4"
+url = "1.7"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -15,7 +15,7 @@ hyper-native-tls = "0.2"
 chrono = "0.4"
 md5 = "0.3"
 csv = "0.15"
-rand = "0.3"
+rand = "0.4"
 slog = "2.2"
 slog-term = "2.4"
 slog-scope = "4.0"

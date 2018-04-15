@@ -20,7 +20,7 @@ impl EEWHistory {
 			None => true,
 			Some(vec) => {
 				let latest = vec.last().expect("each buffer contains at least 1 EEW");
-				latest.is_successor(eew)
+				latest.is_succeeded_by(eew)
 			}
 		}
 	}

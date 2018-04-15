@@ -56,9 +56,9 @@ impl EEWBuilder {
 	}
 
 	#[allow(dead_code)]
-	pub fn id(self, id: String) -> Self
+	pub fn id<S>(self, id: S) -> Self where S: Into<String>
 	{
-		Self { id: Some(id), .. self }
+		Self { id: Some(id.into()), .. self }
 	}
 
 	#[allow(dead_code)]

@@ -25,7 +25,8 @@ use slog_term::{PlainSyncDecorator, FullFormat};
 use tina::*;
 use config::*;
 
-const ENV_VAR_NAME: &'static str = "TINA_CONF_PATH";
+const REVISION: &'static str = env!("TINA_REVISION");
+const CONF_PATH_ENV_VAR: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
 
@@ -90,15 +91,23 @@ fn spawn_conn_thread(thread_num: u32, wni: Wni,
 fn main()
 {
 	let cmd_args: Vec<String> = env::args().collect();
-	let env_arg_string = env::var(ENV_VAR_NAME).ok();
 
-	let cmd_arg = cmd_args.get(1).map(|s| s.as_str());
-	let env_arg = env_arg_string.as_ref().map(|s| s.as_str());
-	let conf_path = cmd_arg.or(env_arg).unwrap_or(DEFAULT_CONFIG_PATH);
+	match cmd_args.get(1).map(|s| s.as_str()) {
+		Some("-v") | Some("--version") => {
+			eprintln!("Tina - EEW Client (rev.{})", REVISION);
+			return;
+		},
+		_ => {}
+	}
+
+	let conf_path_arg = cmd_args.get(1).map(|s| s.as_str());
+	let conf_path_env_owned = env::var(CONF_PATH_ENV_VAR).ok();
+	let conf_path_env = conf_path_env_owned.as_ref().map(|s| s.as_str());
+	let conf_path = conf_path_arg.or(conf_path_env).unwrap_or(DEFAULT_CONFIG_PATH);
 
 	let conf = match Config::load_config(conf_path) {
 		Err(err) => {
-			println!("Error while loading config ({:?})", err);
+			println!("Error while loading config from '{}' ({:?})", conf_path, err);
 			return;
 		},
 		Ok(c) => c

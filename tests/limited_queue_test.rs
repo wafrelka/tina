@@ -2,7 +2,6 @@ extern crate tina;
 
 use tina::*;
 
-
 #[test]
 fn it_should_erase_old_blocks_with_fifo_manner()
 {

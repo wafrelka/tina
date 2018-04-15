@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use eew::{EEW, EEWPhase, EEWDetail, IntensityClass};
 use condition::Condition;
 
@@ -33,7 +31,7 @@ fn test_bool(expected: Option<bool>, actual: bool) -> bool
 	}
 }
 
-fn test_detail<V, F>(expected: Option<V>, latest: &Arc<EEW>, f: F) -> bool
+fn test_detail<V, F>(expected: Option<V>, latest: &EEW, f: F) -> bool
 	where F: FnOnce(V, &EEWDetail) -> bool
 {
 	match expected {
@@ -42,8 +40,8 @@ fn test_detail<V, F>(expected: Option<V>, latest: &Arc<EEW>, f: F) -> bool
 	}
 }
 
-fn test_with_prev<V, F>(expected: Option<V>, latest: &Arc<EEW>, prev: Option<&Arc<EEW>>, f: F) -> bool
-	where F: FnOnce(V, &Arc<EEW>, &Arc<EEW>) -> bool
+fn test_with_prev<V, F>(expected: Option<V>, latest: &EEW, prev: Option<&EEW>, f: F) -> bool
+	where F: FnOnce(V, &EEW, &EEW) -> bool
 {
 	match (expected, prev) {
 		(None, _) => true,
@@ -52,7 +50,7 @@ fn test_with_prev<V, F>(expected: Option<V>, latest: &Arc<EEW>, prev: Option<&Ar
 	}
 }
 
-fn test_with_prev_detail<V, F>(expected: Option<V>, latest: &Arc<EEW>, prev: Option<&Arc<EEW>>, f: F) -> bool
+fn test_with_prev_detail<V, F>(expected: Option<V>, latest: &EEW, prev: Option<&EEW>, f: F) -> bool
 	where F: FnOnce(V, &EEWDetail, &EEWDetail) -> bool
 {
 	match (expected, prev) {
@@ -65,13 +63,11 @@ fn test_with_prev_detail<V, F>(expected: Option<V>, latest: &Arc<EEW>, prev: Opt
 
 impl Condition for ValueCondition {
 
-	fn is_satisfied(&self, latest: &Arc<EEW>, prevs: &[Arc<EEW>]) -> bool
+	fn is_satisfied(&self, latest: &EEW, prev: Option<&EEW>) -> bool
 	{
-		let prev = prevs.iter().last();
-
 		let simple_conds = [
-			test_bool(self.first, prevs.is_empty()),
-			test_bool(self.succeeding, !prevs.is_empty()),
+			test_bool(self.first, prev.is_none()),
+			test_bool(self.succeeding, prev.is_some()),
 			test_bool(self.alert, latest.get_eew_phase() == Some(EEWPhase::Alert)),
 			test_bool(self.last, latest.is_last()),
 			test_bool(self.cancel, latest.get_eew_phase() == Some(EEWPhase::Cancel)),

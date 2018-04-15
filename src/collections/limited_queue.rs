@@ -1,11 +1,11 @@
-use std::ops::{Index, IndexMut};
+use std::mem;
+
 use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 
-
 pub struct LimitedQueue<T> {
 	q: VecDeque<T>,
-	limit: usize
+	limit: usize,
 }
 
 impl<T> LimitedQueue<T> {
@@ -31,14 +31,63 @@ impl<T> LimitedQueue<T> {
 	pub fn iter(&self) -> Iter<T> { self.q.iter() }
 	pub fn iter_mut(&mut self) -> IterMut<T> { self.q.iter_mut() }
 	pub fn front(&self) -> Option<&T> { self.q.front() }
+	pub fn front_mut(&mut self) -> Option<&mut T> { self.q.front_mut() }
 	pub fn back(&self) -> Option<&T> { self.q.back() }
+	pub fn back_mut(&mut self) -> Option<&mut T> { self.q.back_mut() }
 }
 
-impl<T> Index<usize> for LimitedQueue<T> {
-	type Output = T;
-	fn index(&self, index: usize) -> &T { &self.q[index] }
+pub struct IndexedLimitedQueue<D> {
+	buffer: LimitedQueue<(String, D)>,
 }
 
-impl<T> IndexMut<usize> for LimitedQueue<T> {
-	fn index_mut(&mut self, index: usize) -> &mut T { &mut self.q[index] }
+impl<D> IndexedLimitedQueue<D> {
+
+	pub fn new(limit: usize) -> IndexedLimitedQueue<D>
+	{
+		assert!(limit > 0);
+		IndexedLimitedQueue { buffer: LimitedQueue::new(limit) }
+	}
+
+	pub fn with_allocation(limit: usize) -> IndexedLimitedQueue<D>
+	{
+		assert!(limit > 0);
+		IndexedLimitedQueue { buffer: LimitedQueue::with_allocation(limit) }
+	}
+
+	pub fn get<I>(&self, idx: I) -> Option<&D>
+		where I: PartialEq<String>
+	{
+		self.buffer.iter().find(|ref e| idx == e.0).map(|ref e| &e.1)
+	}
+
+	pub fn get_mut<I>(&mut self, idx: I) -> Option<&mut D>
+		where I: PartialEq<String>
+	{
+		self.buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1)
+	}
+
+	pub fn get_mut_default<I>(&mut self, idx: I) -> &mut D
+		where I: Into<String>, D: Default
+	{
+		let idx = idx.into();
+		let buffer = &mut self.buffer;
+
+		if buffer.iter().find(|ref e| idx == e.0).is_none() {
+			buffer.push((idx, Default::default()));
+			return buffer.back_mut().map(|e| &mut e.1).expect("always exists");
+		}
+
+		buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1).expect("always exists")
+	}
+
+	pub fn upsert<I>(&mut self, idx: I, mut data: D) -> Option<D>
+		where I: PartialEq<String>
+	{
+		if let Some(it) = self.buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1) {
+			mem::swap(it, &mut data);
+			Some(data)
+		} else {
+			None
+		}
+	}
 }

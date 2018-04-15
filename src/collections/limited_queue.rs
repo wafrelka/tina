@@ -81,13 +81,17 @@ impl<D> IndexedLimitedQueue<D> {
 	}
 
 	pub fn upsert<I>(&mut self, idx: I, mut data: D) -> Option<D>
-		where I: PartialEq<String>
+		where I: Into<String>
 	{
-		if let Some(it) = self.buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1) {
+		let idx = idx.into();
+		let buffer = &mut self.buffer;
+
+		if let Some(it) = buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1) {
 			mem::swap(it, &mut data);
-			Some(data)
-		} else {
-			None
+			return Some(data);
 		}
+
+		buffer.push((idx, data));
+		None
 	}
 }

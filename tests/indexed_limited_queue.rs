@@ -58,3 +58,18 @@ fn it_should_create_default_element()
 	assert_eq!(q.get_mut_default("d".to_owned()), &0);
 	assert_eq!(q.get("a".to_owned()), None);
 }
+
+#[test]
+fn it_should_return_old_element_when_upserting()
+{
+	let mut q = IndexedLimitedQueue::new(2);
+
+	assert_eq!(q.upsert("a".to_owned(), 100), None);
+	assert_eq!(q.upsert("a".to_owned(), 200), Some(100));
+	assert_eq!(q.upsert("a".to_owned(), 300), Some(200));
+
+	q.upsert("b".to_owned(), 100);
+	q.upsert("c".to_owned(), 100);
+
+	assert_eq!(q.upsert("a".to_owned(), 100), None);
+}

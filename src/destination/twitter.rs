@@ -2,7 +2,7 @@ use eew::EEW;
 use destination::client::TwitterClient;
 use destination::Destination;
 use collections::IndexedLimitedQueue;
-use translator::ja_format_eew_short;
+use translator::ja_format_eew_oneline;
 
 pub struct Twitter {
 	client: TwitterClient,
@@ -38,7 +38,7 @@ impl Destination for Twitter {
 			false => None,
 		};
 
-		let out = match ja_format_eew_short(latest, prev) {
+		let out = match ja_format_eew_oneline(latest, prev) {
 			Some(out) => out,
 			None => return
 		};

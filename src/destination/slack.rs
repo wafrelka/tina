@@ -1,5 +1,5 @@
-use eew::EEW;
-use destination::client::SlackClient;
+use eew::{EEW, EEWPhase};
+use destination::client::{SlackClient, SlackMessageType};
 use destination::Destination;
 use translator::ja_format_eew_short;
 
@@ -31,7 +31,15 @@ impl Destination for Slack {
 			None => return
 		};
 
-		match self.client.post_message(&out) {
+		let body = format!("[{}] {}", out.0, out.1);
+		let footer = out.2;
+
+		let msg_type = match latest.get_eew_phase() {
+			Some(EEWPhase::Alert) => SlackMessageType::Warning,
+			_ => SlackMessageType::Info,
+		};
+
+		match self.client.post_message(&body, &footer, msg_type) {
 
 			Ok(_) => {}
 

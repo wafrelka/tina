@@ -74,7 +74,7 @@ pub fn compare_intensity(eew: &EEW, prev_opt: Option<&EEW>) -> Ordering
 	}
 }
 
-pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
+pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<(String, String, String)>
 {
 	let mut header = String::new();
 	let mut body = String::new();
@@ -123,5 +123,13 @@ pub fn format_eew_short(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
 
 	write_unwrap!(&mut footer, "第{}報 {}", eew.number, eew.id);
 
-	return Some(format!("[{}] {} | {}", header, body, footer));
+	Some((header, body, footer))
+}
+
+
+pub fn format_eew_oneline(eew: &EEW, prev_opt: Option<&EEW>) -> Option<String>
+{
+	format_eew_short(eew, prev_opt).map(|s|
+		format!("[{}] {} | {}", s.0, s.1, s.2)
+	)
 }

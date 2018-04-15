@@ -18,7 +18,7 @@ fn it_should_format_cancel_eew()
 
 	let expected = "[取消] --- | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -34,7 +34,7 @@ fn it_should_format_intensity_only_eew()
 	let expected =
 		"[速報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -49,7 +49,7 @@ fn it_should_format_low_accuracy_eew()
 	let expected =
 		"[速報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -63,7 +63,7 @@ fn it_should_format_high_accuracy_eew()
 	let expected =
 		"[予報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -80,7 +80,7 @@ fn it_should_format_alert_eew_with_intensity_only()
 	let expected =
 		"[警報] 奈良県 震度5弱 M--- 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -96,7 +96,7 @@ fn it_should_format_alert_eew_with_low_accuracy()
 	let expected =
 		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -113,7 +113,7 @@ fn it_should_format_alert_eew_with_high_accuracy()
 	let expected =
 		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -129,7 +129,7 @@ fn it_should_format_last_eew()
 	let expected =
 		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -145,7 +145,7 @@ fn it_should_format_last_with_correction_eew()
 	let expected =
 		"[警報/最終] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -161,7 +161,7 @@ fn it_should_format_correction_eew()
 	let expected =
 		"[警報] 奈良県 震度5弱 M5.9 10km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }
@@ -178,7 +178,7 @@ fn it_should_format_eew_with_unknown_values()
 	let expected =
 		"[予報] 奈良県 震度不明 M--- ---km (N34.4/E135.7) 09:55:59発生 | 第10報 NDXXXX".to_owned();
 
-	let result = ja_format_eew_short(&eew, None);
+	let result = ja_format_eew_oneline(&eew, None);
 
 	assert_eq!(result, Some(expected));
 }

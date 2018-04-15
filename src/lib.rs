@@ -28,7 +28,7 @@ pub use self::eew::*;
 pub use self::parser::*;
 pub use self::source::Wni;
 pub use self::destination::{Twitter, Logging, Slack, Router, Routing};
-pub use self::translator::{ja_format_eew_short, format_eew_full};
+pub use self::translator::{ja_format_eew_oneline, format_eew_full};
 pub use self::moderator::Moderator;
 pub use self::condition::{Condition, ConstantCondition, TRUE_CONDITION, FALSE_CONDITION,
 	DisjunctiveCondition, ValueCondition};

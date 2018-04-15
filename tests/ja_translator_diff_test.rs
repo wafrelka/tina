@@ -43,7 +43,7 @@ fn it_should_format_with_intensity_same()
 	let eew1 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let eew2 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Same);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -54,7 +54,7 @@ fn it_should_format_with_intensity_up()
 	let eew1 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Zero)).build();
 	let eew2 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Up);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -65,7 +65,7 @@ fn it_should_format_with_intensity_up_from_unknown()
 	let eew1 = EEWBuilder::new().maximum_intensity(None).build();
 	let eew2 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Zero)).build();
 	let expected = expect_normal_eew_string(Some(IntensityClass::Zero), Diff::Up);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -76,7 +76,7 @@ fn it_should_format_with_intensity_down()
 	let eew1 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let eew2 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Zero)).build();
 	let expected = expect_normal_eew_string(Some(IntensityClass::Zero), Diff::Down);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -87,7 +87,7 @@ fn it_should_format_with_intensity_down_to_unknown()
 	let eew1 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let eew2 = EEWBuilder::new().maximum_intensity(None).build();
 	let expected = expect_normal_eew_string(None, Diff::Down);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -98,7 +98,7 @@ fn it_should_format_from_normal_to_cancel()
 	let eew1 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let eew2 = EEWBuilder::new().issue_pattern(IssuePattern::Cancel).kind(Kind::Cancel).detail_none().build();
 	let expected = expect_cancel_eew_string();
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }
@@ -109,7 +109,7 @@ fn it_should_format_from_cancel_to_normal()
 	let eew1 = EEWBuilder::new().issue_pattern(IssuePattern::Cancel).kind(Kind::Cancel).detail_none().build();
 	let eew2 = EEWBuilder::new().maximum_intensity(Some(IntensityClass::Four)).build();
 	let expected = expect_normal_eew_string(Some(IntensityClass::Four), Diff::Same);
-	let result = ja_format_eew_short(&eew2, Some(&eew1));
+	let result = ja_format_eew_oneline(&eew2, Some(&eew1));
 
 	assert_eq!(result, Some(expected));
 }

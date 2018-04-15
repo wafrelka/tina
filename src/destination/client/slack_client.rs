@@ -1,14 +1,23 @@
 use reqwest::{Client, Url, StatusCode};
 
+const WARNING_COLOR: &'static str = "#CF0301";
+const INFO_COLOR: &'static str = "#E8E8E8";
+
 pub struct SlackClient {
 	webhook_url: Url,
 	client: Client,
 }
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum SlackError {
 	Network,
 	Rejected,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum SlackMessageType {
+	Warning,
+	Info,
 }
 
 impl SlackClient {
@@ -23,9 +32,22 @@ impl SlackClient {
 		})
 	}
 
-	pub fn post_message(&self, message: &str) -> Result<(), SlackError>
+	pub fn post_message(&self, body: &str, footer: &str,
+		msg_type: SlackMessageType) -> Result<(), SlackError>
 	{
-		let payload = json!({"text": message});
+		let color = match msg_type {
+			SlackMessageType::Warning => WARNING_COLOR,
+			SlackMessageType::Info => INFO_COLOR,
+		};
+
+		let payload = json!({
+			"attachments" : [{
+				"fallback" : body,
+				"text" : body,
+				"footer": footer,
+				"color" : color,
+			}]
+		});
 
 		let response = self.client.post(self.webhook_url.clone())
 			.json(&payload)

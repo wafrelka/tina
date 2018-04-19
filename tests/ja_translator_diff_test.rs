@@ -34,7 +34,7 @@ fn expect_normal_eew_string(maximum_intensity: Option<IntensityClass>, updown: D
 
 fn expect_cancel_eew_string() -> String
 {
-	"[取消] --- | 第10報 NDXXXX".to_string()
+	"[取消] --- | 第10報 NDXXXX".to_owned()
 }
 
 #[test]

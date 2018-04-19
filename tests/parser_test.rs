@@ -142,7 +142,7 @@ fn it_should_parse_ebi_part()
 	let make_areaeew = |area_name: &str, minimum_intensity: f32, maximum_intensity: Option<f32>,
 		reach_at: Option<DateTime<Utc>>, warning: bool, reached: bool|
 		-> AreaEEW { AreaEEW {
-			area_name: area_name.to_string(),
+			area_name: area_name.to_owned(),
 			minimum_intensity: IntensityClass::new(minimum_intensity),
 			maximum_intensity: maximum_intensity.map(|i| IntensityClass::new(i)),
 			reach_at: reach_at,

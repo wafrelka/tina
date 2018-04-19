@@ -25,7 +25,7 @@ pub fn format_position(pos: (f32, f32)) -> String
 pub fn format_magnitude(m: Option<f32>) -> String
 {
 	match m {
-		None => "M---".to_string(),
+		None => "M---".to_owned(),
 		Some(f) => format!("M{:.1}", f)
 	}
 }
@@ -33,7 +33,7 @@ pub fn format_magnitude(m: Option<f32>) -> String
 pub fn format_depth(d: Option<f32>) -> String
 {
 	match d {
-		None => "---km".to_string(),
+		None => "---km".to_owned(),
 		Some(f) => format!("{:.0}km", f)
 	}
 }
@@ -52,7 +52,7 @@ pub fn format_intensity(intensity: Option<IntensityClass>) -> String
 		Some(IntensityClass::SixLower) => "震度6弱",
 		Some(IntensityClass::SixUpper) => "震度6強",
 		Some(IntensityClass::Seven) => "震度7"
-	}.to_string()
+	}.to_owned()
 }
 
 pub fn compare_intensity(eew: &EEW, prev_opt: Option<&EEW>) -> Ordering

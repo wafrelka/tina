@@ -28,9 +28,9 @@ impl EEWHistory {
 	pub fn append(&mut self, eew: EEW) -> Option<Arc<EEW>>
 	{
 		if self.is_acceptable(&eew) {
-			let id = eew.id.clone();
+			let v = self.q.get_mut_default(eew.id.as_ref());
 			let arc = Arc::new(eew);
-			self.q.get_mut_default(id).push(arc.clone());
+			v.push(arc.clone());
 			Some(arc)
 		} else {
 			None

@@ -67,31 +67,25 @@ impl<D> IndexedLimitedQueue<D> {
 	}
 
 	pub fn get_mut_default<I>(&mut self, idx: I) -> &mut D
-		where I: Into<String>, D: Default
+		where I: PartialEq<String> + Into<String>, D: Default
 	{
-		let idx = idx.into();
-		let buffer = &mut self.buffer;
-
-		if buffer.iter().find(|ref e| idx == e.0).is_none() {
-			buffer.push((idx, Default::default()));
-			return buffer.back_mut().map(|e| &mut e.1).expect("always exists");
+		if self.buffer.iter().find(|ref e| idx == e.0).is_none() {
+			self.buffer.push((idx.into(), Default::default()));
+			self.buffer.back_mut().map(|e| &mut e.1).expect("always exists")
+		} else {
+			self.buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1).expect("always exists")
 		}
-
-		buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1).expect("always exists")
 	}
 
 	pub fn upsert<I>(&mut self, idx: I, mut data: D) -> Option<D>
-		where I: Into<String>
+		where I: PartialEq<String> + Into<String>
 	{
-		let idx = idx.into();
-		let buffer = &mut self.buffer;
-
-		if let Some(it) = buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1) {
+		if let Some(it) = self.buffer.iter_mut().find(|ref e| idx == e.0).map(|e| &mut e.1) {
 			mem::swap(it, &mut data);
 			return Some(data);
 		}
 
-		buffer.push((idx, data));
+		self.buffer.push((idx.into(), data));
 		None
 	}
 }

@@ -3,6 +3,7 @@ use std::mem;
 use std::collections::vec_deque::{Iter, IterMut};
 use std::collections::VecDeque;
 
+#[derive(Debug, Clone)]
 pub struct LimitedQueue<T> {
 	q: VecDeque<T>,
 	limit: usize,
@@ -36,6 +37,7 @@ impl<T> LimitedQueue<T> {
 	pub fn back_mut(&mut self) -> Option<&mut T> { self.q.back_mut() }
 }
 
+#[derive(Debug, Clone)]
 pub struct IndexedLimitedQueue<D> {
 	buffer: LimitedQueue<(String, D)>,
 }

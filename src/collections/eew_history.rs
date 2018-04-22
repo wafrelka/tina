@@ -3,6 +3,7 @@ use std::sync::Arc;
 use collections::IndexedLimitedQueue;
 use eew::EEW;
 
+#[derive(Debug, Clone)]
 pub struct EEWHistory {
 	q: IndexedLimitedQueue<Vec<Arc<EEW>>>,
 }

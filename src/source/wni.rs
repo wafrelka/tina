@@ -1,5 +1,5 @@
 use std::io::{BufRead, BufReader, Write};
-use std::time::Duration;
+use std::time::Duration as StdDuration;
 use std::collections::HashMap;
 use std::net::TcpStream;
 use std::str;
@@ -8,13 +8,16 @@ use reqwest::Client;
 use md5;
 use rand::{thread_rng, Rng};
 use slog::{Logger, Discard};
-use chrono::{DateTime, Utc, TimeZone};
+use chrono::{DateTime, Utc, TimeZone, Duration};
 
+use collections::LimitedQueue;
 use eew::EEW;
 use parser::{parse_jma_format, JMAFormatParseError};
 
 const CONNECTION_TIMEOUT_SECS: u64 = 3 * 60;
 const DELAY_THRESHOLD_MS: i64 = 2000;
+const DELAY_COUNT_WINDOW: usize = 10;
+const DELAY_COUNT_LIMIT: usize = 2;
 const DATE_FORMAT: &'static str = "%a, %d %b %Y %T%.6f UTC";
 const X_WNI_TIME_FORMAT: &'static str = "%Y/%m/%d %T%.6f";
 
@@ -56,6 +59,21 @@ fn to_wni_time(utc: &DateTime<Utc>) -> String
 fn from_wni_time(txt: &[u8]) -> Option<DateTime<Utc>>
 {
 	str::from_utf8(txt).ok().and_then(|s| Utc.datetime_from_str(s, X_WNI_TIME_FORMAT).ok())
+}
+
+fn compute_delay(headers: &Vec<Vec<u8>>) -> Option<Duration>
+{
+	let date_part = headers.iter()
+		.find(|h| h.starts_with(b"Date: "))
+		.and_then(|s| from_header_date(&s[6..]));
+	let x_wni_time_part = headers.iter()
+		.find(|h| h.starts_with(b"X-WNI-Time: "))
+		.and_then(|s| from_wni_time(&s[12..]));
+
+	match (date_part, x_wni_time_part) {
+		(Some(date), Some(x_wni_time)) => Some(date.signed_duration_since(x_wni_time)),
+		_ => None,
+	}
 }
 
 impl Wni {
@@ -103,6 +121,7 @@ pub struct WniConnection<'a> {
 	reader: BufReader<TcpStream>,
 	logger: &'a Logger,
 	too_slow: bool,
+	delay_history: LimitedQueue<Duration>,
 }
 
 impl<'a> WniConnection<'a> {
@@ -112,9 +131,9 @@ impl<'a> WniConnection<'a> {
 	{
 		let stream = TcpStream::connect(&server).map_err(|_| WniError::Network)?;
 		stream.set_nodelay(true).expect("set_nodelay call failed");
-		stream.set_read_timeout(Some(Duration::from_secs(CONNECTION_TIMEOUT_SECS)))
+		stream.set_read_timeout(Some(StdDuration::from_secs(CONNECTION_TIMEOUT_SECS)))
 			.expect("set_read_timeout call failed");
-		stream.set_write_timeout(Some(Duration::from_secs(CONNECTION_TIMEOUT_SECS)))
+		stream.set_write_timeout(Some(StdDuration::from_secs(CONNECTION_TIMEOUT_SECS)))
 			.expect("set_write_timeout call failed");
 
 		let reader = BufReader::new(stream);
@@ -124,6 +143,7 @@ impl<'a> WniConnection<'a> {
 			reader: reader,
 			logger: logger,
 			too_slow: false,
+			delay_history: LimitedQueue::with_allocation(DELAY_COUNT_WINDOW),
 		};
 
 		conn.write_request(wni_id, wni_terminal_id, wni_password)?;
@@ -259,45 +279,20 @@ impl<'a> WniConnection<'a> {
 			return Err(WniError::TooSlow);
 		}
 
+		let mut headers;
+
 		loop {
 
-			let headers = self.read_headers()?;
+			headers = self.read_headers()?;
 
-			if headers.iter().any(|h| h == b"X-WNI-ID: Data") {
-
-				let date_part = headers.iter()
-					.find(|h| h.starts_with(b"Date: "))
-					.and_then(|s| from_header_date(&s[6..]));
-				let x_wni_time_part = headers.iter()
-					.find(|h| h.starts_with(b"X-WNI-Time: "))
-					.and_then(|s| from_wni_time(&s[12..]));
-
-				let delta_ms = match (date_part, x_wni_time_part) {
-					(Some(date), Some(x_wni_time)) =>
-						Some(date.signed_duration_since(x_wni_time).num_milliseconds()),
-					_ => None,
-				};
-
-				match delta_ms {
-					Some(x) if x > DELAY_THRESHOLD_MS => {
-						self.too_slow = true;
-						info!("[{}] delay: {} (too slow)", self.server, x);
-					},
-					Some(x) => {
-						debug!("[{}] delay: {}", self.server, x);
-					},
-					None => {
-						warn!("[{}] arrival delay parse error", self.server);
-					}
-				}
-
-				break;
-
-			} else if ! headers.iter().any(|h| h == b"X-WNI-ID: Keep-Alive") {
+			if headers.iter().any(|h| h == b"X-WNI-ID: Keep-Alive") {
+				self.write_response()?;
+				continue;
+			} else if !headers.iter().any(|h| h == b"X-WNI-ID: Data") {
 				return Err(WniError::InvalidData);
 			}
 
-			self.write_response()?;
+			break;
 		}
 
 		let buffer = self.read_until(b'\x03')?;
@@ -312,6 +307,24 @@ impl<'a> WniConnection<'a> {
 		let raw_data = &buffer[left..right];
 		let eew = parse_jma_format(raw_data, epicenter_dict, area_dict)
 			.map_err(|e| WniError::ParseError(e))?;
+
+		if let Some(delay) = compute_delay(&headers) {
+
+			debug!("[{}] delay: {} ms", self.server, delay.num_milliseconds());
+
+			if eew.number == 1 {
+
+				self.delay_history.push(delay);
+
+				let slow_count = self.delay_history.iter()
+					.filter(|d| d.num_milliseconds() > DELAY_THRESHOLD_MS)
+					.count();
+				self.too_slow = self.too_slow || (slow_count > DELAY_COUNT_LIMIT);
+			}
+
+		} else {
+			warn!("[{}] arrival delay parse error", self.server);
+		}
 
 		self.write_response()?;
 

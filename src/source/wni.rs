@@ -3,6 +3,7 @@ use std::time::Duration as StdDuration;
 use std::collections::HashMap;
 use std::net::TcpStream;
 use std::str;
+use std::sync::Arc;
 
 use reqwest::Client;
 use md5;
@@ -28,6 +29,7 @@ pub enum WniError {
 	ConnectionClosed,
 	InvalidData,
 	TooSlow,
+	NoServerAvailable,
 	ParseError(JMAFormatParseError),
 }
 
@@ -39,6 +41,7 @@ pub struct Wni {
 	server_list_url: String,
 	client: Client,
 	logger: Logger,
+	conn_list: Vec<Arc<String>>,
 }
 
 fn to_header_date(utc: &DateTime<Utc>) -> String
@@ -88,10 +91,21 @@ impl Wni {
 			server_list_url: server_list_url,
 			client: Client::new(),
 			logger: logger.unwrap_or(Logger::root(Discard, o!())),
+			conn_list: Vec::new(),
 		}
 	}
 
-	pub fn retrieve_server(&self) -> Result<String, WniError>
+	fn refresh_conn_list(&mut self)
+	{
+		self.conn_list.retain(|arc| Arc::strong_count(arc) >= 2);
+	}
+
+	fn has_connection(&self, dest: &str) -> bool
+	{
+		self.conn_list.iter().find(|a| a.as_ref() == dest).is_some()
+	}
+
+	fn pickup_server(&self) -> Result<String, WniError>
 	{
 		let mut resp = self.client.get(&self.server_list_url).send().map_err(|_| WniError::Network)?;
 
@@ -99,37 +113,42 @@ impl Wni {
 			return Err(WniError::Network);
 		}
 		let text = resp.text().map_err(|_| WniError::Network)?;
-		let servers: Vec<&str> = text.split('\n').filter(|&s| s != "").collect();
-		let chosen = thread_rng().choose(&servers).ok_or(WniError::Network)?;
+		let mut servers: Vec<&str> = text.split('\n').filter(|&s| s != "").collect();
+		thread_rng().shuffle(&mut servers);
 
-		Ok(chosen.to_string())
+		servers.iter().find(|s| ! self.has_connection(&s))
+			.map(|&s| s.to_owned())
+			.ok_or(WniError::NoServerAvailable)
 	}
 
-	pub fn connect(&self) -> Result<WniConnection, WniError>
+	pub fn connect(&mut self) -> Result<WniConnection, WniError>
 	{
-		let server = self.retrieve_server()?;
+		self.refresh_conn_list();
+		let server = Arc::new(self.pickup_server()?);
+		self.conn_list.push(server.clone());
+
 		let conn = WniConnection::open(server,
-			&self.wni_id, &self.wni_terminal_id, &self.wni_password, &self.logger)?;
+			&self.wni_id, &self.wni_terminal_id, &self.wni_password, self.logger.clone())?;
 
 		Ok(conn)
 	}
 }
 
 #[derive(Debug)]
-pub struct WniConnection<'a> {
-	server: String,
+pub struct WniConnection {
+	server: Arc<String>,
 	reader: BufReader<TcpStream>,
-	logger: &'a Logger,
+	logger: Logger,
 	too_slow: bool,
 	delay_history: LimitedQueue<Duration>,
 }
 
-impl<'a> WniConnection<'a> {
+impl WniConnection {
 
-	pub fn open<'b>(server: String, wni_id: &'b str, wni_terminal_id: &'b str,
-		wni_password: &'b str, logger: &'a Logger) -> Result<WniConnection<'a>, WniError>
+	pub fn open(server: Arc<String>, wni_id: &str, wni_terminal_id: &str,
+		wni_password: &str, logger: Logger) -> Result<WniConnection, WniError>
 	{
-		let stream = TcpStream::connect(&server).map_err(|_| WniError::Network)?;
+		let stream = TcpStream::connect(server.as_ref()).map_err(|_| WniError::Network)?;
 		stream.set_nodelay(true).expect("set_nodelay call failed");
 		stream.set_read_timeout(Some(StdDuration::from_secs(CONNECTION_TIMEOUT_SECS)))
 			.expect("set_read_timeout call failed");

@@ -16,6 +16,7 @@ use std::sync::mpsc::sync_channel;
 use std::sync::mpsc::SyncSender;
 use std::thread::{spawn, JoinHandle};
 use std::collections::HashMap;
+use std::sync::{Mutex, Arc};
 
 use slog::{Drain, Logger, Discard, Duplicate};
 use slog_scope::set_global_logger;
@@ -51,17 +52,18 @@ fn build_specific_logger(log_path: &Option<String>, duplication: bool, default: 
 	}
 }
 
-fn spawn_conn_thread(thread_num: u32, wni: Wni,
+fn spawn_conn_thread(thread_num: u32, wni: Arc<Mutex<Wni>>,
 	epicenter_dict: HashMap<[u8; 3], String>, area_dict: HashMap<[u8; 3], String>,
 	sock: SyncSender<EEW>) -> JoinHandle<()>
 {
 	spawn(move || {
 
 		let mut moderator = Moderator::new();
+		let wni = wni;
 
 		loop {
 
-			let mut connection = match wni.connect() {
+			let mut connection = match wni.lock().unwrap().connect() {
 				Ok(v) => v,
 				Err(e) => {
 					error!("Thread {} - ConnectionError: {:?}", thread_num, e);
@@ -125,8 +127,14 @@ fn main()
 	let eew_logger = build_specific_logger(&conf.log.eew_log_path, conf.log.eew_stdout_log, &stdout_logger);
 	let wni_logger = build_specific_logger(&conf.log.wni_log_path, conf.log.wni_stdout_log, &stdout_logger);
 
-	let wni = Wni::new(conf.wni.id.clone(), "40285072".to_owned(), conf.wni.password.clone(),
-		SERVER_LIST_URL.to_owned(), Some(wni_logger));
+	let raw_wni = Wni::new(
+		conf.wni.id.clone(),
+		"40285072".to_owned(),
+		conf.wni.password.clone(),
+		SERVER_LIST_URL.to_owned(),
+		Some(wni_logger)
+	);
+	let wni = Arc::new(Mutex::new(raw_wni));
 	let mut socks: Vec<Box<Routing>> = Vec::new();
 
 	socks.push(Box::new(Router::new(Logging::new(eew_logger), TRUE_CONDITION, "Log")));

@@ -28,6 +28,7 @@ const REVISION: &'static str = env!("TINA_REVISION");
 const CONF_PATH_ENV_VAR: &'static str = "TINA_CONF_PATH";
 const DEFAULT_CONFIG_PATH: &'static str = "config/tina.yaml";
 const SERVER_LIST_URL: &'static str = "http://lst10s-sp.wni.co.jp/server_list.txt";
+const WNI_THREAD_COUNT: u32 = 4;
 
 const EEW_HISTORY_CAPACITY: usize = 128;
 
@@ -164,7 +165,7 @@ fn main()
 	let mut conn_threads = Vec::new();
 	let (eew_tx, eew_rx) = sync_channel(32);
 
-	for thread_num in 0..3 {
+	for thread_num in 0..WNI_THREAD_COUNT {
 
 		let t = spawn_conn_thread(thread_num, wni.clone(),
 			conf.epicenter_dict.clone(), conf.area_dict.clone(), eew_tx.clone());

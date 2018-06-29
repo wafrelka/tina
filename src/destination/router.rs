@@ -1,7 +1,8 @@
 use std::marker::Send;
 use std::thread;
-use std::sync::mpsc::{SyncSender, sync_channel};
+use std::sync::mpsc::{SyncSender, sync_channel, RecvTimeoutError};
 use std::sync::Arc;
+use std::time::Duration;
 
 use eew::EEW;
 use collections::IndexedLimitedQueue;
@@ -32,10 +33,15 @@ impl<C> Router<C> where C: Condition {
 		thread::spawn(move || {
 
 			let mut dest = dest;
+			let duration = Duration::from_secs(<D as Destination>::WAKE_TIMEOUT_SECS);
 
 			loop {
-				let (latest, prev) = rx.recv().unwrap();
-				dest.emit(&latest, prev.as_ref().map(|arc| arc.as_ref()));
+				match rx.recv_timeout(duration) {
+					Ok((latest, prev)) =>
+						dest.emit(&latest, prev.as_ref().map(|arc| arc.as_ref())),
+					Err(RecvTimeoutError::Timeout) => dest.wake(),
+					_ => panic!("eew channel closed unexpectedly")
+				}
 			}
 		});
 
@@ -66,7 +72,5 @@ impl<C> Routing for Router<C> where C: Condition {
 		if let Err(err) = self.tx.try_send((eew.clone(), old)) {
 			warn!("Error while sending EEW data to the destination thread ({:?})", err);
 		}
-
-
 	}
 }

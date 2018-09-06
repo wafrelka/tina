@@ -18,7 +18,7 @@ pub enum JMAFormatParseError {
 	InvalidId,
 	InvalidStatus,
 	InvalidNumber,
-	UnknownEpicenter,
+	UnknownEpicenterCode,
 	InvalidLL,
 	InvalidDepth,
 	InvalidMagnitude,
@@ -33,6 +33,7 @@ pub enum JMAFormatParseError {
 	InvalidWaveStatus,
 	InvalidEBI,
 	PrematureEOS,
+	UnknownAreaCode,
 }
 
 fn parse_datetime(datetime_text: &[u8]) -> Option<DateTime<Utc>>
@@ -164,7 +165,7 @@ pub fn parse_jma_format(text: &[u8],
 	}
 	let epicenter_name = match epicenter_code_dict.get(&text[86..89]) {
 		Some(s) => s.clone(),
-		None => return Err(JMAFormatParseError::UnknownEpicenter)
+		None => return Err(JMAFormatParseError::UnknownEpicenterCode)
 	};
 
 	let lat_value = match parse_number(&text[91..94]) {
@@ -308,7 +309,7 @@ pub fn parse_jma_format(text: &[u8],
 
 			let area_name = match area_code_dict.get(&part[1..4]) {
 				Some(s) => s.clone(),
-				None => return Err(JMAFormatParseError::InvalidEBI)
+				None => return Err(JMAFormatParseError::UnknownAreaCode)
 			};
 
 			let left_intensity =

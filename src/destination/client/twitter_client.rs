@@ -56,10 +56,10 @@ impl TwitterClient {
 		let oauth_header = OAuthAuthorizationHeaderBuilder::new(
 			"POST",
 			&Url::parse(url).expect("must be a valid url string"),
-			self.consumer_key.as_ref(),
-			self.consumer_secret.as_ref(),
+			&self.consumer_key,
+			&self.consumer_secret,
 			HmacSha1)
-			.token(self.access_key.as_ref(), self.access_secret.as_ref())
+			.token(&self.access_key, &self.access_secret)
 			.request_parameters(args.into_iter())
 			.finish_for_twitter()
 			.to_string();

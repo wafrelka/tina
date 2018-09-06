@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::error::Error as StdError;
 
-use csv::Reader;
+use csv::ReaderBuilder;
 use serde::{Deserializer, Deserialize};
 use serde::de::Error as SerdeError;
 use serde_yaml;
@@ -151,11 +151,11 @@ fn def_opt_false() -> Option<bool> { Some(false) }
 
 fn load_code_dict(path: &str) -> Result<HashMap<[u8; 3], String>, ConfigLoadError>
 {
-	let mut reader = try!(Reader::from_file(path).map_err(|_| ConfigLoadError::CodeDictFileIO));
+	let mut reader = try!(ReaderBuilder::new().has_headers(false).from_path(path).map_err(|_| ConfigLoadError::CodeDictFileIO));
 
 	let mut dict = HashMap::new();
 
-	for record in reader.decode() {
+	for record in reader.deserialize() {
 
 		let (code, name): (String, String) = try!(record.map_err(|_| ConfigLoadError::InvalidCodeFormat));
 

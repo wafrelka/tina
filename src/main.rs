@@ -127,7 +127,7 @@ fn main()
 
 	let wni = Wni::new(conf.wni.id.clone(), "40285072".to_owned(), conf.wni.password.clone(),
 		SERVER_LIST_URL.to_owned(), Some(wni_logger));
-	let mut socks: Vec<Box<Routing>> = Vec::new();
+	let mut socks: Vec<Box<dyn Routing>> = Vec::new();
 
 	socks.push(Box::new(Router::new(Logging::new(eew_logger), TRUE_CONDITION, "Log")));
 	info!("Enabled: EEW Logging");

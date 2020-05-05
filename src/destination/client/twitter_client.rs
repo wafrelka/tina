@@ -5,7 +5,7 @@ use oauthcli::OAuthAuthorizationHeaderBuilder;
 use serde_json;
 use serde_json::Value;
 use reqwest::{Client, Url, StatusCode, Response};
-use reqwest::header::{Authorization};
+use reqwest::header::{HeaderValue, AUTHORIZATION};
 
 const API_URL: &'static str = "https://api.twitter.com/1.1/statuses/update.json";
 
@@ -51,7 +51,7 @@ impl TwitterClient {
 	{
 		let mut req = self.client.post(url);
 
-		req.form(&args);
+		req = req.form(&args);
 
 		let oauth_header = OAuthAuthorizationHeaderBuilder::new(
 			"POST",
@@ -64,7 +64,7 @@ impl TwitterClient {
 			.finish_for_twitter()
 			.to_string();
 
-		req.header(Authorization(oauth_header)).send().map_err(|_| ())
+		req.header(AUTHORIZATION, &oauth_header).send().map_err(|_| ())
 	}
 
 	pub fn update_status(&self, message: &str, in_reply_to: Option<u64>)
@@ -81,7 +81,7 @@ impl TwitterClient {
 
 		match response.status() {
 
-			StatusCode::Forbidden => {
+			StatusCode::FORBIDDEN => {
 
 				let mut body = String::new();
 				response.read_to_string(&mut body).map_err(|_| TwitterError::Network)?;
@@ -96,7 +96,7 @@ impl TwitterClient {
 				}
 			},
 
-			StatusCode::Ok => {
+			StatusCode::OK => {
 
 				let mut body = String::new();
 				response.read_to_string(&mut body).map_err(|_| TwitterError::Network)?;
@@ -108,8 +108,8 @@ impl TwitterClient {
 				Ok(id)
 			},
 
-			StatusCode::TooManyRequests => Err(TwitterError::RateLimitExceeded),
-			StatusCode::Unauthorized => Err(TwitterError::Unauthorized),
+			StatusCode::TOO_MANY_REQUESTS => Err(TwitterError::RateLimitExceeded),
+			StatusCode::UNAUTHORIZED => Err(TwitterError::Unauthorized),
 			_ => Err(TwitterError::Unknown(format!("unknown status: {}", response.status())))
 		}
 	}

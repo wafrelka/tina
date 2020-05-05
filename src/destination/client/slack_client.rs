@@ -55,7 +55,7 @@ impl SlackClient {
 			.map_err(|_| SlackError::Network)?;
 
 		match response.status() {
-			StatusCode::Ok => Ok(()),
+			StatusCode::OK => Ok(()),
 			_ => Err(SlackError::Rejected),
 		}
 	}

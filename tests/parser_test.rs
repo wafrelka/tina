@@ -83,6 +83,7 @@ fn it_should_parse_normal_eew_01()
 			warning_status: WarningStatus::Forecast,
 			intensity_change: IntensityChange::Unknown,
 			change_reason: ChangeReason::Unknown,
+			plum: false,
 			area_info: vec!{},
 		}),
 	};
@@ -120,6 +121,7 @@ fn it_should_parse_normal_eew_02()
 			warning_status: WarningStatus::Alert,
 			intensity_change: IntensityChange::Down,
 			change_reason: ChangeReason::Magnitude,
+			plum: false,
 			area_info: vec!{},
 		}),
 	};
@@ -174,6 +176,7 @@ fn it_should_parse_ebi_part()
 			warning_status: WarningStatus::Alert,
 			intensity_change: IntensityChange::Down,
 			change_reason: ChangeReason::Magnitude,
+			plum: false,
 			area_info: vec! {
 				make_areaeew("大阪府南部", 5.25, Some(5.25), None, true, true),
 				make_areaeew("奈良県", 4.75, Some(5.25), None, true, true),
@@ -224,6 +227,7 @@ fn it_should_parse_eew_with_unknown_values()
 			warning_status: WarningStatus::Forecast,
 			intensity_change: IntensityChange::Unknown,
 			change_reason: ChangeReason::Unknown,
+			plum: false,
 			area_info: vec!{},
 		}),
 	};

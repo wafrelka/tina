@@ -79,8 +79,10 @@ fn parse_arrival_time(arrival_text: &[u8], base: &DateTime<Utc>) -> Option<DateT
 	let adjust = |a_t: NaiveTime| {
 		let base_t = base.with_timezone(&jst).time();
 		let diff = a_t.signed_duration_since(base_t);
-		if diff < Duration::seconds(0) {
+		if diff < Duration::hours(-2) {
 			base.checked_add_signed(Duration::days(1) + diff)
+		} else if diff > Duration::hours(2) {
+			base.checked_add_signed(Duration::days(-1) + diff)
 		} else {
 			base.checked_add_signed(diff)
 		}
@@ -274,6 +276,11 @@ pub fn parse_jma_format(text: &[u8],
 		_ => return Err(JMAFormatParseError::InvalidWarningStatus)
 	};
 
+	let plum = match text[123] {
+		b'9' => true,
+		_ => false,
+	};
+
 	let intensity_change = match text[129] {
 		b'0' => IntensityChange::Same,
 		b'1' => IntensityChange::Up,
@@ -288,6 +295,7 @@ pub fn parse_jma_format(text: &[u8],
 		b'2' => ChangeReason::Epicenter,
 		b'3' => ChangeReason::Mixed,
 		b'4' => ChangeReason::Depth,
+		b'9' => ChangeReason::Plum,
 		b'/' => ChangeReason::Unknown,
 		_ => return Err(JMAFormatParseError::InvalidChangeReason)
 	};
@@ -352,6 +360,7 @@ pub fn parse_jma_format(text: &[u8],
 			let wave_status = match part[19] {
 				b'0' => WaveStatus::Unreached,
 				b'1' => WaveStatus::Reached,
+				b'9' => WaveStatus::Plum,
 				b'/' => WaveStatus::Unknown,
 				_ => return Err(JMAFormatParseError::InvalidEBI)
 			};
@@ -389,6 +398,7 @@ pub fn parse_jma_format(text: &[u8],
 		warning_status: warning_status,
 		intensity_change: intensity_change,
 		change_reason: change_reason,
+		plum: plum,
 
 		area_info: area_info
 	};

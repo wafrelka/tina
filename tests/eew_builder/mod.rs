@@ -130,6 +130,7 @@ impl EEWBuilder {
 			warning_status: self.warning_status.unwrap_or(WarningStatus::Forecast),
 			intensity_change: IntensityChange::Unknown,
 			change_reason: ChangeReason::Unknown,
+			plum: false,
 			area_info: vec!{},
 		};
 

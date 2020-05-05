@@ -40,10 +40,10 @@ pub enum WarningStatus { Forecast, Alert, Unknown }
 pub enum IntensityChange { Same, Up, Down, Unknown }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Unknown }
+pub enum ChangeReason { Nothing, Magnitude, Epicenter, Mixed, Depth, Plum, Unknown }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum WaveStatus { Unreached, Reached, Unknown }
+pub enum WaveStatus { Unreached, Reached, Plum, Unknown }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum IntensityClass {
@@ -113,6 +113,7 @@ pub struct EEWDetail {
 	pub warning_status: WarningStatus,
 	pub intensity_change: IntensityChange,
 	pub change_reason: ChangeReason,
+	pub plum: bool,
 
 	pub area_info: Vec<AreaEEW>,
 }
